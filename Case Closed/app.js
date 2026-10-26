@@ -16,7 +16,7 @@ const FIRST = ["Tony","Linda","Marcus","Elena","Jack","Rosa","Victor","Nina","Ca
 const LAST = ["Miller","Davis","Reyes","Brooks","Novak","Carter","Hayes","Moreno","Ellis","Foster","Quinn","Ward","Price","Stone","Petrov","Okafor","Chen","Silva","Rossi","Kowalski","Haddad","Murphy","Tanaka","Jovanovic","Lopez","Weber","Singh","Duarte","Bianchi","Larsen"];
 const SUSPECT_JOBS = ["Police officer","Bartender","CEO","Lawyer","Mechanic","Student","Pharmacist","Accountant","Bouncer","Journalist","Chef","Landlord","Nurse","Tattoo artist","Professor","Florist","Musician","Realtor","Dealer","Taxi dispatcher"];
 const WITNESS_JOBS = ["Street vendor","Night janitor","Taxi driver","Barista","Dock worker","Newsstand clerk","Paramedic","Security guard","Hot dog vendor","Bus driver","Night nurse","Florist"];
-const VICTIMS = ["Victor Hale","Samantha Cole","Raymond Pike","Julia Marsh","Eddie Lang"];
+const VICTIMS = ["Victor Hale", "Samantha Cole\u200b", "Raymond Pike", "Julia Marsh\u200b", "Eddie Lang"];
 const MOTIVES = ["The victim owed me money, but I'd never hurt anyone.","Yes, we argued last week. Everybody argued with the victim.","I won't lie, I didn't like them. That's not a crime."];
 
 const VEHICLES = [
@@ -206,7 +206,7 @@ function startTutorial() { startNewCase("Chicago", "easy", true); }
 
 const TIPS = {
     intro: ["STEP 1/12. Welcome to your first day. Read the case story: it tells you the city, the victim and where the body was found. You have 168 hours (7 days). Now click START INVESTIGATION.", "KORAK 1/12. Dobro došao na prvi radni dan. Pročitaj priču o slučaju: kaže ti grad, žrtvu i gde je pronađeno telo. Imaš 168 sati (7 dana). Sada klikni ZAPOČNI ISTRAGU.", "#introScreen .button"],
-    map: ["STEP 2. This is the city map. Each dot is a place you can visit and the small number is the travel time in hours. The top bar shows the time left, how long you have been awake and the clock. The red ✖ is the crime scene. Click it.", "KORAK 2. Ovo je mapa grada. Svaka tačka je mesto koje možeš da posetiš, a mali broj je vreme putovanja u satima. Gornja traka pokazuje preostalo vreme, koliko si budan i sat. Crveno ✖ je mesto zločina. Klikni na njega.", ".pin.crime"],
+    map: ["STEP 2. This is the city map. Each dot is a place you can visit and the small number is the travel time in hours. The top bar shows the day and clock, the hours left (168 in total) and AWAKE: how long you have been awake. After 16 hours awake the detective collapses and must sleep 8 hours, so plan your sleep. The red ✖ is the crime scene. Click it.", "KORAK 2. Ovo je mapa grada. Svaka tačka je mesto koje možeš da posetiš, a mali broj je vreme putovanja u satima. Gornja traka pokazuje dan i sat, preostale sate (ukupno 168) i BUDAN: koliko si dugo budan. Posle 16 sati budnosti detektiv se ruši i mora da spava 8 sati, zato planiraj spavanje. Crveno ✖ je mesto zločina. Klikni na njega.", ".pin.crime"],
     crime: ["STEP 3. You are at the crime scene. The big picture is the location. The buttons on top are your actions: each costs hours and works only once per place. People who are here stand at the bottom. First click 🧤 Search scene to look for physical evidence.", "KORAK 3. Na mestu si zločina. Velika slika je lokacija. Dugmad gore su tvoje akcije: svaka troši sate i radi samo jednom po mestu. Ljudi koji su ovde stoje dole. Prvo klikni 🧤 Pretraži mesto zločina da potražiš dokaze.", "#searchBtn"],
     search: ["STEP 4. You found evidence about the killer. Everything you learn is saved in your NOTEBOOK. Next click 📹 CCTV to review the camera.", "KORAK 4. Našao si dokaz o ubici. Sve što saznaš čuva se u tvojoj BELEŽNICI. Sledeće klikni 📹 Kamere da pregledaš snimak.", "#cctvBtn"],
     cctv: ["STEP 5. The camera showed what the killer wore: another clue. Now click a person at the bottom to question them.", "KORAK 5. Kamera je pokazala šta je ubica nosio: još jedan trag. Sada klikni na osobu dole da je ispitaš.", ".sprite"],
@@ -219,14 +219,15 @@ const TIPS = {
     compare: ["STEP 10. The CLUES row on top is what you know about the killer. Below are the people you met. Green cells match a clue. The person who matches every clue is the killer, so keep investigating until exactly one person fits. Now click POLICE.", "KORAK 10. Red TRAGOVI gore je ono što znaš o ubici. Ispod su ljudi koje si upoznao. Zelene ćelije se poklapaju sa tragom. Osoba koja se poklapa sa svim tragovima je ubica, zato istražuj dok ne ostane tačno jedna osoba. Sada klikni POLICIJA.", "#tab-police"],
     tabpolice: ["STEP 11. Police can tail a person for 12 hours (2 times per case). When time is almost out you can request a roadblock for +24 hours. When you are sure who it is, press ARREST at the bottom of the notebook. Now click CLOSE.", "KORAK 11. Policija može da prati osobu 12 sati (2 puta po slučaju). Kad vreme skoro istekne, možeš da zatražiš blokadu za +24 sata. Kad si siguran ko je, pritisni UHAPSI na dnu beležnice. Sada klikni ZATVORI.", "#nbClose"],
     closed: ["STEP 12. Carry on: click 🗺 Map, visit other places, talk to everyone and use 🔎 Alibis to check who really was where. In this tutorial a wrong arrest only warns you, in real cases it ends the case.", "KORAK 12. Nastavi: klikni 🗺 Mapa, poseti druga mesta, razgovaraj sa svima i koristi 🔎 Alibiji da proveriš ko je stvarno bio gde. U ovom tutorijalu pogrešno hapšenje samo upozorava, u pravim slučajevima završava slučaj.", "#mapBtn"],
+    found: ["FOUND HIM! All 4 clues match this person, so they are the killer. Open the NOTEBOOK if it is closed, press ARREST SUSPECT and click their name. Well done, Detective!", "NAŠAO SI GA! Sva 4 traga se poklapaju sa ovom osobom, pa je to sigurno ubica. Otvori BELEŽNICU ako je zatvorena, pritisni UHAPSI OSUMNJIČENOG i klikni na njeno ime. Svaka čast, detektive!", "#nbToggle, #arrestSection .danger-btn"],
     loc2: ["Tip: 🔎 Alibis shows who really was at this place that night and reveals new people. Click it.", "Savet: 🔎 Alibiji pokazuju ko je zaista bio na ovom mestu te noći i otkrivaju nove ljude. Klikni na to.", "#alibiBtn"]
 };
-function tip(k) {
+function tip(k, en2, sr2) {
     if (!state.tutorial || state.tipsSeen[k]) return;
     state.tipsSeen[k] = 1;
     document.querySelectorAll(".glow").forEach(e => e.classList.remove("glow"));
     const [en, sr, target] = TIPS[k], b = el("tipBox");
-    b.innerText = (lang === "sr" ? "👮 ŠEF: " + sr : "👮 CHIEF: " + en);
+    b.innerText = (lang === "sr" ? "👮 ŠEF: " + (sr2 || sr) : "👮 CHIEF: " + (en2 || en));
     b.classList.remove("hidden");
     setTimeout(() => document.querySelectorAll(target).forEach(e => e.classList.add("glow")), 50);
 }
@@ -238,7 +239,14 @@ function toggleNotebook() {
 function closeNotebook() {
     const nb = document.querySelector(".notebook-panel"), was = nb.classList.contains("open");
     nb.classList.remove("open");
-    if (was) tip("closed");
+    if (was) {
+        const r = state.tutorial && Object.keys(state.known).map(id => state.people.find(x => x.id === id)).find(p => !state.known[p.id].met);
+        if (r) {
+            const L = state.locations[r.loc].name;
+            tip("closed", `STEP 12. Now let's meet ${r.name}: they are at ${L}. Click 🗺 Map and travel there. Keep going: talk to everyone, use 🔎 Alibis and check the COMPARE tab. In this tutorial a wrong arrest only warns you.`,
+                `KORAK 12. Hajde da upoznamo osobu ${r.name}: nalazi se na lokaciji: ${L}. Klikni 🗺 Mapa i otputuj tamo. Nastavi: razgovaraj sa svima, koristi 🔎 Alibiji i proveravaj tab UPOREDI. U ovom tutorijalu pogrešno hapšenje samo upozorava.`);
+        } else tip("closed");
+    }
 }
 let typer;
 function typeText(t) {
@@ -359,11 +367,10 @@ function buildPeople(d) {
 // ================= TIME =================
 function updateHeader() {
     el("timeHours").innerText = Math.max(0, state.time);
-    el("daysLeft").innerText = Math.max(0, Math.ceil(state.time / 24));
     el("awakeHours").innerText = state.awake;
     el("awakeMax").innerText = awakeLimit();
     const gone = 168 - state.time, hh = ((gone % 24) + 24) % 24;
-    el("clock").innerText = `Day ${Math.max(1, Math.min(7, Math.floor(gone / 24) + 1))}, ${String(hh).padStart(2, "0")}:00`;
+    el("clock").innerText = `Day ${Math.max(1, Math.min(7, Math.floor(gone / 24) + 1))}/7, ${String(hh).padStart(2, "0")}:00`;
     el("timeHours").classList.toggle("urgent", state.time <= 24);
 }
 
@@ -669,7 +676,14 @@ function showTab(t) {
         el("pane-" + x).classList.toggle("hidden", x !== t);
     });
     const tk = { people: "tabpeople", case: "tabcase", compare: "compare", police: "tabpolice" }[t];
-    if (tk) tip(tk);
+    if (tk === "tabpeople") {
+        const r = Object.keys(state.known).map(id => state.people.find(x => x.id === id)).find(p => !state.known[p.id].met);
+        if (r) {
+            const L = state.locations[r.loc].name;
+            tip(tk, `STEP 8. Each card shows a portrait, job, where to find the person, looks and alibi. Look: you learned about ${r.name}, who is at ${L} ('Reported at'). You have not met them yet, so we will go there later: close the notebook and use the 🗺 Map. First click CASE.`,
+                `KORAK 8. Svaka kartica ima portret, posao, gde se osoba nalazi, izgled i alibi. Gledaj: saznao si za osobu ${r.name}, koja je na lokaciji: ${L} ('Prijavljen na lokaciji'). Još je nisi upoznao, pa idemo tamo kasnije: zatvori beležnicu i koristi 🗺 Mapu. Prvo klikni SLUČAJ.`);
+        } else tip(tk);
+    } else if (tk) tip(tk);
     if (t === "police") updatePolice();
 }
 
@@ -743,6 +757,7 @@ function makeArrest(p) {
 
 function endGame(win, msg) {
     sfx(win ? "win" : "bad");
+    msg += ` Hours used: ${168 - Math.max(0, state.time)}. People met: ${Object.values(state.known).filter(k => k.met).length}.`;
     el("tipBox").classList.add("hidden");
     if (state.tutorial && win) { profile.tutorialDone = true; profile.cash += 50; msg += " Tutorial complete! Reward: $50."; }
     else if (state.tutorial) msg += " Tutorial failed. You will try it again.";
@@ -814,7 +829,7 @@ function setLang(l) { lang = l; try { localStorage.setItem("cc_lang", l); } catc
 const DYN = { sr: {
  "Rookie": "Početnik", "Officer": "Policajac", "Senior Detective": "Viši detektiv", "Detective": "Detektiv", "Inspector": "Inspektor", "Chief": "Načelnik",
  "Easy ★": "Lako ★", "Medium ★★": "Srednje ★★", "Hard ★★★": "Teško ★★★", "Expert ★★★★": "Stručno ★★★★",
- "AWAKE: ": "BUDAN: ", "TIME REMAINING: ": "PREOSTALO VREME: ", " hours (": " sati (", " Days)": " dana)", "CASE: ": "SLUČAJ: ", "Day ": "Dan ",
+ "AWAKE: ": "BUDAN: ", "h LEFT": "h preostalo", "CASE: ": "SLUČAJ: ", "Day ": "Dan ",
  "One murder. Seven days. One chance to arrest the right person.": "Jedno ubistvo. Sedam dana. Jedna šansa da uhapsiš pravu osobu.",
  "YOUR JOB": "TVOJ POSAO", "You are a homicide detective. On every case you must:": "Ti si detektiv za ubistva. U svakom slučaju moraš da:",
  "1. Travel the city and search the crime scene.": "1. Putuješ gradom i pretražuješ mesto zločina.",
@@ -826,11 +841,11 @@ const DYN = { sr: {
  "Each city has an open file. Harder cases have more suspects and less reliable evidence.": "Svaki grad ima otvoren slučaj. Teži slučajevi imaju više osumnjičenih i manje pouzdane dokaze.",
  "Thanks for playing, Detective.": "Hvala što igraš, detektive.", "You can close this tab now.": "Možeš da zatvoriš ovaj tab.",
  "Locked. Solve more cases to rank up.": "Zaključano. Reši još slučajeva da napreduješ.", "Not enough cash.": "Nemaš dovoljno novca.",
- "A murder has been reported in ": "Prijavljeno je ubistvo u gradu: ", "! The body of ": "! Telo: ", " was found last night at midnight near ": " pronađeno je sinoć u ponoć kod lokacije: ",
+ "A murder has been reported in ": "Prijavljeno je ubistvo u gradu: ", "! The body of ": "! Žrtva: ", "\u200b was found last night at midnight near ": " je pronađena sinoć u ponoć kod lokacije: ", " was found last night at midnight near ": " je pronađen sinoć u ponoć kod lokacije: ",
  ". You have exactly one week (168 hours) to search the city, check cameras, find and question people, and verify alibis.": ". Imaš tačno nedelju dana (168 sati) da pretražiš grad, pregledaš kamere, pronađeš i ispitaš ljude i proveriš alibije.",
  " Travel and every action cost time, and you need sleep.": " Putovanje i svaka akcija troše vreme, a moraš i da spavaš.",
  " You have no suspect list: find them yourself. Good luck, Detective.": " Nemaš listu osumnjičenih: pronađi ih sam. Srećno, detektive.", "FIRST DAY ON THE JOB. ": "PRVI RADNI DAN. ",
- "Case opened: ": "Slučaj otvoren: ", " was found dead near ": " je pronađen/a mrtav/a kod lokacije: ", " at midnight.": " u ponoć.",
+ "Case opened: ": "Slučaj otvoren: ", "\u200b was found dead near ": " je pronađena mrtva kod lokacije: ", " was found dead near ": " je pronađen mrtav kod lokacije: ", " at midnight.": " u ponoć.",
  "New lead: ": "Nov trag: ", "usually found at": "obično se viđa na lokaciji:", "may know more, at": "možda zna više, na lokaciji:",
  "named in an anonymous tip, found at": "pominje ga anonimna dojava, nalazi se na lokaciji:", "tipped by your informant, found at": "dojavio tvoj doušnik, nalazi se na lokaciji:", "found by your assistant, usually at": "pronašao tvoj pomoćnik, obično na lokaciji:",
  "You met ": "Upoznao si osobu: ", ", location: ": ", lokacija: ",
@@ -902,7 +917,7 @@ const DYN = { sr: {
  "🕶 Informant": "🕶 Doušnik", "Start every case with one known lead.": "Svaki slučaj počinješ sa jednim poznatim tragom.", "🎞 Sepia theme": "🎞 Sepija tema", "Warm vintage colors for the whole game.": "Tople vintidž boje za celu igru.",
  "🌃 Neon theme": "🌃 Neon tema", "Cyberpunk blue and pink.": "Sajberpank plava i roze.", "🩸 Blood theme": "🩸 Tema krvi", "Dark crimson colors.": "Tamne grimizne boje.",
  "👤 Assistant: hired. Reports a new lead every 24 hours.": "👤 Pomoćnik: angažovan. Svaka 24 sata javlja novi trag.", "👤 Assistant: unlocks at rank Senior Detective.": "👤 Pomoćnik: otključava se na činu Viši detektiv.",
- "Police officer": "Policajac", "Bartender": "Konobar", "CEO": "Direktor", "Lawyer": "Advokat", "Mechanic": "Mehaničar", "Student": "Student", "Pharmacist": "Farmaceut", "Accountant": "Računovođa", "Bouncer": "Izbacivač", "Journalist": "Novinar", "Chef": "Kuvar", "Landlord": "Stanodavac",
+ " Hours used: ": " Iskorišćeno sati: ", ". People met: ": ". Upoznatih ljudi: ", "Police officer": "Policajac", "Bartender": "Konobar", "CEO": "Direktor", "Lawyer": "Advokat", "Mechanic": "Mehaničar", "Student": "Student", "Pharmacist": "Farmaceut", "Accountant": "Računovođa", "Bouncer": "Izbacivač", "Journalist": "Novinar", "Chef": "Kuvar", "Landlord": "Stanodavac",
  "Nurse": "Medicinar", "Tattoo artist": "Tatu majstor", "Professor": "Profesor", "Florist": "Cvećar", "Musician": "Muzičar", "Realtor": "Agent za nekretnine", "Dealer": "Diler", "Taxi dispatcher": "Taksi dispečer",
  "Street vendor": "Ulični prodavac", "Night janitor": "Noćni domar", "Taxi driver": "Taksista", "Barista": "Barista", "Dock worker": "Lučki radnik", "Newsstand clerk": "Prodavac na kiosku", "Paramedic": "Bolničar", "Security guard": "Čuvar", "Hot dog vendor": "Prodavac viršli", "Bus driver": "Vozač autobusa", "Night nurse": "Noćna sestra"
 } };
@@ -936,6 +951,18 @@ function translateAll(force) {
 }
 function queueTranslate() { if (trQueued) return; trQueued = true; requestAnimationFrame(() => { trQueued = false; translateAll(false); }); }
 if (typeof MutationObserver !== "undefined") new MutationObserver(queueTranslate).observe(document.body, { childList: true, subtree: true, characterData: true });
+
+const _updateCompare = updateCompare;
+updateCompare = function () { _updateCompare(); checkFound(); };
+function checkFound() {
+    if (!state.tutorial || state.tipsSeen.found) return;
+    if (!TRAITS.every(([n, t]) => (state.clues[t] || []).length)) return;
+    const perfect = Object.keys(state.known).filter(id => state.known[id].met).filter(id => {
+        const p = state.people.find(x => x.id === id);
+        return TRAITS.every(([n, t]) => state.clues[t].some(c => c.v === p.traits[t]));
+    });
+    if (perfect.length === 1) tip("found");
+}
 
 // ================= INIT =================
 document.body.dataset.theme = profile.theme || "";
