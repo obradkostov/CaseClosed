@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Closed</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="toast" class="hidden"></div>
+
+<div id="menuView">
+    <div id="menuArt"></div>
+    <div id="menuScreen" class="menu-wrap">
+        <h1 class="title">CASE CLOSED</h1>
+        <p class="subtitle">One murder. Seven days. One chance to arrest the right person.</p>
+        <p id="rankLine"></p>
+        <div class="desc">
+            <b>YOUR JOB</b><br>
+            You are a homicide detective. On every case you must:<br>
+            1. Travel the city and search the crime scene.<br>
+            2. Find and question people. Witnesses help, suspects may lie.<br>
+            3. Check CCTV and verify alibis.<br>
+            4. Watch the clock: 168 hours, and you need sleep.<br>
+            5. Arrest the killer. A wrong arrest ends the case.<br>
+            Solve cases to rank up from Rookie to Chief. Higher ranks unlock harder cases.
+        </div>
+        <button class="button menu-btn" onclick="showUSA()">▶ START</button>
+        <button class="button menu-btn" id="tutBtn" onclick="startTutorial()">🎓 TUTORIAL (RECOMMENDED)</button>
+        <button class="button menu-btn" onclick="showOffice()">🏢 OFFICE</button>
+        <button class="button menu-btn" onclick="showSettings()">⚙ SETTINGS</button>
+        <button class="button menu-btn" onclick="quitGame()">✖ QUIT</button>
+    </div>
+
+    <div id="usaScreen" class="wide-wrap hidden">
+        <h2>SELECT A CASE</h2>
+        <p class="hint">Each city has an open file. Harder cases have more suspects and less reliable evidence.</p>
+        <div id="usaMap"></div>
+        <button class="button" onclick="switchScreen('menuScreen')">⬅ BACK</button>
+    </div>
+
+    <div id="settingsScreen" class="menu-wrap hidden">
+        <h2>⚙ SETTINGS</h2>
+        <button class="button menu-btn" id="musicBtn" onclick="toggleMusic()"></button>
+        <button class="button menu-btn" id="sfxBtn" onclick="toggleSfx()"></button>
+        <button class="button menu-btn" id="voiceBtn" onclick="toggleVoice()"></button>
+        <p>Volume</p>
+        <input type="range" id="volSlider" min="0" max="100" value="50" oninput="setVol(this.value/100)">
+        <p>🌐 Language</p>
+        <div><button class="button" onclick="setLang('en')">English</button><button class="button" onclick="setLang('sr')">Srpski / Hrvatski</button><button class="button" onclick="setLang('es')">Español</button><button class="button" onclick="setLang('it')">Italiano</button></div>
+        <p>🎨 Theme</p>
+        <div id="themeList"></div>
+        <button class="button menu-btn" onclick="switchScreen('menuScreen')">⬅ BACK</button>
+    </div>
+
+    <div id="officeScreen" class="menu-wrap hidden">
+        <h2>🏢 OFFICE</h2>
+        <p id="officeCash" class="hint"></p>
+        <div id="officeList"></div>
+        <button class="button menu-btn" onclick="switchScreen('menuScreen')">⬅ BACK</button>
+    </div>
+
+    <div id="quitScreen" class="menu-wrap hidden">
+        <h2>Thanks for playing, Detective.</h2>
+        <p class="hint">You can close this tab now.</p>
+        <button class="button menu-btn" onclick="switchScreen('menuScreen')">⬅ BACK TO MENU</button>
+    </div>
+</div>
+
+<div id="gameView" class="hidden">
+    <div id="tipBox" class="hidden" onclick="this.classList.add('hidden')"></div>
+    <header>
+        <div>🕵️‍♂️ CASE: <span id="cityTitle">...</span> <span id="diffTag"></span></div>
+        <div>😴 AWAKE: <span id="awakeHours">0</span>/<span id="awakeMax">16</span>h &nbsp;|&nbsp; ⏳ TIME REMAINING: <span id="timeHours">168</span> hours (<span id="daysLeft">7</span> Days) &nbsp;|&nbsp; 🕐 <span id="clock"></span></div>
+        <button class="button" id="nbToggle" onclick="toggleNotebook()">📝 NOTEBOOK</button>
+        <button class="button" id="leaveBtn" onclick="abandonCase()">🏳 LEAVE CASE</button>
+    </header>
+
+    <div class="main-container">
+        <div class="game-panel">
+            <div id="introScreen" class="hidden">
+                <h3 class="panel-header">🚨 NEW CRIME REPORTED!</h3>
+                <div id="introBanner" class="banner"></div>
+                <p id="introText"></p>
+                <button class="button" onclick="showMap()">START INVESTIGATION</button>
+            </div>
+
+            <div id="mapScreen" class="hidden">
+                <h3 class="panel-header">📍 CITY MAP: click a location to travel there</h3>
+                <div id="cityMap"></div>
+                <button class="button" onclick="sleep()">😴 SLEEP (8h)</button>
+            </div>
+
+            <div id="locationScreen" class="hidden">
+                <div class="stage">
+                    <div id="locationBanner" class="banner bg"></div>
+                    <div class="topbar">
+                        <span id="currentLocationName"></span>
+                        <button class="button" id="cctvBtn" onclick="checkCamera()">📹 CCTV (2h)</button>
+                        <button class="button" id="searchBtn" onclick="searchScene()">🧤 Search scene (3h)</button>
+                        <button class="button" id="alibiBtn" onclick="checkAlibis()">🔎 Alibis (2h)</button>
+                        <button class="button" onclick="sleep()">😴 Sleep (8h)</button>
+                        <button class="button" id="mapBtn" onclick="showMap()">🗺 Map</button>
+                    </div>
+                    <p id="reportBox"></p>
+                    <div id="peopleList" class="sprites"></div>
+                    <div id="dialogueContainer" class="hidden">
+                        <div id="personAvatar"></div>
+                        <div>
+                            <div id="dialogueName"></div>
+                            <p id="dialogueText"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="endScreen" class="hidden">
+                <h2 id="endTitle"></h2>
+                <p id="endText"></p>
+                <button class="button" onclick="showUSA()">NEW CASE</button>
+                <button class="button" onclick="switchScreen('menuScreen')">MAIN MENU</button>
+            </div>
+        </div>
+
+        <div class="notebook-panel">
+            <div class="nb-head">
+                <h2>📝 DETECTIVE'S NOTEBOOK</h2>
+                <button class="button" id="nbClose" onclick="closeNotebook()">✖ CLOSE</button>
+            </div>
+            <div class="nb-tabs">
+                <button class="button tab active" id="tab-notes" onclick="showTab('notes')">NOTES</button>
+                <button class="button tab" id="tab-people" onclick="showTab('people')">PEOPLE <span id="peopleCount">(0)</span></button>
+                <button class="button tab" id="tab-case" onclick="showTab('case')">CASE</button>
+                <button class="button tab" id="tab-compare" onclick="showTab('compare')">COMPARE</button>
+                <button class="button tab" id="tab-police" onclick="showTab('police')">POLICE</button>
+            </div>
+            <div class="nb-body">
+                <div id="pane-notes"><ul id="notebookList"></ul></div>
+                <div id="pane-people" class="hidden"><div id="peopleFile"></div></div>
+                <div id="pane-case" class="hidden"><div id="caseFile"></div></div>
+                <div id="pane-compare" class="hidden"><div id="compareFile"></div></div>
+                <div id="pane-police" class="hidden"><div id="policeFile"></div></div>
+            </div>
+            <div id="arrestSection" class="hidden">
+                <button class="button danger-btn" onclick="openArrestMenu()">🚨 ARREST SUSPECT</button>
+                <div id="arrestDiv" class="hidden">
+                    <p>Who is the killer? (only people you have found)</p>
+                    <div id="arrestOptions"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
