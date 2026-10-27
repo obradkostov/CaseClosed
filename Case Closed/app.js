@@ -12,8 +12,8 @@ CITIES["Seattle"] = { ll: [-122.3, 47.6], locs: [["Pike Place Market","shop",40,
 CITIES["Las Vegas"] = { ll: [-115.1, 36.2], locs: [["The Strip Casino","neon",50,25],["Desert Motel","hotel",15,70],["Fremont Chapel","shop",75,40],["Neon Boneyard","grave",85,75],["Dam Lookout","culture",20,20],["Old Town Pawn Shop","shop",55,80],["Fremont Street Bar","neon",80,15],["Wedding Chapel","shop",40,55]] };
 const US_OUTLINE = [[-124.7,48.4],[-123.3,49],[-95.2,49],[-89.5,48],[-84.5,46.5],[-82.5,45.3],[-82.4,43],[-79,43.2],[-76.5,44],[-75,45],[-71.5,45],[-70.2,46.7],[-67.8,47.1],[-67,44.8],[-70,43.5],[-70.6,42.6],[-70,41.7],[-73.9,40.6],[-74,39.5],[-75.5,38.5],[-76,37],[-75.7,35.2],[-78,33.9],[-81,32],[-81.3,30.3],[-80,27],[-80.4,25.2],[-81.2,25.2],[-82.7,27.7],[-82.7,29.2],[-84,30],[-85.3,29.7],[-87,30.3],[-89,30.2],[-89.4,29],[-90.5,29.2],[-93.8,29.7],[-97,27.8],[-97.4,25.9],[-99.2,26.5],[-101,29.7],[-104.5,29.6],[-106.5,31.8],[-108.2,31.8],[-108.2,31.3],[-111,31.3],[-114.8,32.5],[-117.1,32.5],[-118.5,34],[-120.6,34.5],[-122.4,37.2],[-123.8,39.5],[-124.4,40.4],[-124.2,43],[-124.1,46.2]];
 
-const FIRST = ["Tony","Linda","Marcus","Elena","Jack","Rosa","Victor","Nina","Carl","Dana","Oscar","Helen","Frank","Maya","Sofia","Dmitri","Aiden","Priya","Luis","Greta","Omar","Chloe","Ivan","Tessa","Miguel","Hana","Boris","Leah","Sam","Irene"];
-const LAST = ["Miller","Davis","Reyes","Brooks","Novak","Carter","Hayes","Moreno","Ellis","Foster","Quinn","Ward","Price","Stone","Petrov","Okafor","Chen","Silva","Rossi","Kowalski","Haddad","Murphy","Tanaka","Jovanovic","Lopez","Weber","Singh","Duarte","Bianchi","Larsen"];
+const FIRST = ["Tony","Linda","Marcus","Elena","Jack","Rosa","Victor","Nina","Carl","Dana","Oscar","Helen","Frank","Maya","Sofia","Dmitri","Aiden","Priya","Luis","Greta","Omar","Chloe","Ivan","Tessa","Miguel","Hana","Boris","Leah","Sam","Irene","Nikola","Marija","Stefan","Jovana","Luka","Milica","Marko","Ana","Vuk","Ivana","Tomas","Elif","Yuki","Paul","Nadia","Felix"];
+const LAST = ["Miller","Davis","Reyes","Brooks","Novak","Carter","Hayes","Moreno","Ellis","Foster","Quinn","Ward","Price","Stone","Petrov","Okafor","Chen","Silva","Rossi","Kowalski","Haddad","Murphy","Tanaka","Jovanovic","Lopez","Weber","Singh","Duarte","Bianchi","Larsen","Petrovic","Nikolic","Markovic","Djordjevic","Kovac","Horvat","Babic","Savic","Novak","Fischer","Moreau","Costa"];
 const SUSPECT_JOBS = ["Police officer","Bartender","CEO","Lawyer","Mechanic","Student","Pharmacist","Accountant","Bouncer","Journalist","Chef","Landlord","Nurse","Tattoo artist","Professor","Florist","Musician","Realtor","Dealer","Taxi dispatcher"];
 const WITNESS_JOBS = ["Street vendor","Night janitor","Taxi driver","Barista","Dock worker","Newsstand clerk","Paramedic","Security guard","Hot dog vendor","Bus driver","Night nurse","Florist"];
 const VICTIMS = ["Victor Hale", "Samantha Cole\u200b", "Raymond Pike", "Julia Marsh\u200b", "Eddie Lang"];
@@ -56,12 +56,26 @@ const HABITS = [
     { file: "cracks their knuckles", seen: "kept cracking their knuckles" },
     { file: "hums old jazz tunes", seen: "was humming an old jazz tune" }
 ];
+const OBJECTIVES = [
+    { t: "Solve it with at least 72 hours left.", bonus: 150, ok: st => st.time >= 72 },
+    { t: "Do not use any police tails.", bonus: 100, ok: st => st.tails === 2 },
+    { t: "Meet at least 8 people.", bonus: 100, ok: st => Object.values(st.known).filter(k => k.met).length >= 8 },
+    { t: "Never collapse from exhaustion.", bonus: 80, ok: st => !st.collapsed }
+];
+const TIES = [
+    { file: "the victim's business partner", seen: "the victim's business partner", say: "We were business partners." },
+    { file: "the victim's ex-lover", seen: "the victim's ex-lover", say: "We used to be together." },
+    { file: "someone who owed the victim money", seen: "someone who owed the victim money", say: "I owed them money." },
+    { file: "the victim's rival", seen: "the victim's rival", say: "We were rivals, everyone knew." },
+    { file: "the victim's neighbor", seen: "the victim's neighbor", say: "I lived next door." },
+    { file: "the victim's former employee", seen: "the victim's former employee", say: "I used to work for them." }
+];
 const OPENERS = ["Look, it happened fast, but ", "I didn't want to get involved, but ", "Okay, officer. ", "Honestly? ", "I keep seeing it when I close my eyes. ", "Fine, I'll tell you. "];
 const ALIBI_TIMES = ["from 10 PM until about 1 AM", "from 9 PM until almost 2 AM", "from 11 PM until closing time", "since early evening, well past midnight", "from 10:30 PM until 3 AM", "the whole night"];
 const NOCOVER = ["from 7 PM until 11 PM", "until about 10 PM, then I walked around alone", "from 8 PM until 11:30 PM"];
 const MOODS = ["*fidgets nervously* ", "*lights a cigarette* ", "*shrugs* ", "*glances over their shoulder* ", "*sighs* ", "", "", "*crosses their arms* "];
-const TR = ["vehicle", "clothing", "feature", "habit"];
-const POOL = { vehicle: VEHICLES, clothing: CLOTHES, feature: FEATURES, habit: HABITS };
+const TR = ["vehicle", "clothing", "feature", "habit", "tie"];
+const POOL = { vehicle: VEHICLES, clothing: CLOTHES, feature: FEATURES, habit: HABITS, tie: TIES };
 
 const DIFFICULTY = {
     easy:   { label: "Easy ★",      need: 0, assist: 2, suspects: 5,  decoys: 0, gated: false, cctv: true,  hedge: false },
@@ -127,12 +141,27 @@ function refreshAudioUI() {
     applyLang();
 }
 function toggleVoice() { A.voice = !A.voice; if (!A.voice && window.speechSynthesis) speechSynthesis.cancel(); refreshAudioUI(); }
+let VOICES = [];
+function loadVoices() { if (window.speechSynthesis) VOICES = speechSynthesis.getVoices(); }
+if (window.speechSynthesis) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+function pickVoice(h) {
+    const want = { sr: ["sr", "hr", "bs"], es: ["es"], it: ["it"] }[lang] || ["en"];
+    for (const code of want) {
+        const list = VOICES.filter(v => v.lang.toLowerCase().startsWith(code));
+        if (!list.length) continue;
+        const good = list.filter(v => /natural|neural|online|google/i.test(v.name));
+        const pool = good.length ? good : list;
+        return pool[h % pool.length];
+    }
+    return null;
+}
 function speak(text, p) {
     if (!A.voice || !window.speechSynthesis) return;
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text.replace(/\*[^*]*\*/g, ""));
-    const h = hash(p.id);
-    u.lang = "en-US"; u.pitch = 0.6 + (h % 10) / 10 * 1.2; u.rate = 0.9 + (h % 5) / 20; u.volume = A.vol;
+    const h = hash(p.id), v = pickVoice(h);
+    if (v) { u.voice = v; u.lang = v.lang; } else u.lang = lang === "sr" ? "sr-RS" : "en-US";
+    u.pitch = 0.9 + (h % 5) / 20; u.rate = 0.95 + (h % 4) / 40; u.volume = A.vol;
     speechSynthesis.speak(u);
 }
 function toggleMusic() { audioInit(); A.music = !A.music; if (A.master) A.master.gain.value = A.music ? A.vol : 0; refreshAudioUI(); }
@@ -189,14 +218,14 @@ function portrait(p, met) {
 
 // ================= PROFILE, RANKS, TUTORIAL =================
 const RANKS = [["Rookie", 0], ["Officer", 2], ["Detective", 4], ["Senior Detective", 7], ["Inspector", 11], ["Chief", 16]];
-let profile = { solved: 0, tutorialDone: false, cash: 0, items: {}, theme: "" };
-const awakeLimit = () => 16 + (profile.items.thermos ? 4 : 0);
+let profile = { solved: 0, tutorialDone: false, cash: 0, items: {}, theme: "", chapter: 0, choices: {}, nextTails: 0, nextLead: 0, storyIntro: false, day: 1, coffee: 0 };
+const awakeLimit = () => 16 + (profile.items.thermos ? 4 : 0) + ((typeof state !== "undefined" && state.coffee) || 0);
 try { Object.assign(profile, JSON.parse(localStorage.getItem("caseClosedProfile") || "{}")); } catch (e) {}
 const saveProfile = () => { try { localStorage.setItem("caseClosedProfile", JSON.stringify(profile)); } catch (e) {} };
 const rankIndex = () => RANKS.reduce((r, x, i) => profile.solved >= x[1] ? i : r, 0);
 function updateMenuRank() {
     const i = rankIndex();
-    el("rankLine").innerText = `${tr("Rank")}: ${RANKS[i][0]} | ${tr("Cases solved")}: ${profile.solved} | ${tr("Cash")}: $${profile.cash}`;
+    el("rankLine").innerText = `${tr("Rank")}: ${RANKS[i][0]} | ${tr("Cases solved")}: ${profile.solved} | ${tr("Cash")}: $${profile.cash} | ${tr("Story")}: ${Math.min(profile.chapter, STORY.length)}/${STORY.length}`;
     el("tutBtn").dataset.en = profile.tutorialDone ? "🎓 REPLAY TUTORIAL" : "🎓 TUTORIAL (RECOMMENDED)";
     el("tutBtn").classList.toggle("glow", !profile.tutorialDone);
     applyLang();
@@ -212,14 +241,14 @@ const TIPS = {
     cctv: ["STEP 5. The camera showed what the killer wore: another clue. Now click a person at the bottom to question them.", "KORAK 5. Kamera je pokazala šta je ubica nosio: još jedan trag. Sada klikni na osobu dole da je ispitaš.", ".sprite"],
     empty: ["STEP 5. Nobody is here, and the camera saw nothing useful. That is normal: not every place has clues. We have no clue here, so we must look around. Click 🗺 Map and visit another place.", "KORAK 5. Ovde nema nikoga, a kamera nije snimila ništa korisno. To je normalno: nema tragova na svakom mestu. Ovde nemamo nikakav trag, pa moramo da tražimo drugde. Klikni 🗺 Mapa i poseti drugo mesto.", "#mapBtn"],
     nocctv: ["The camera here saw nothing. Not every place has clues. Talk to the people here, or click 🗺 Map to look somewhere else.", "Kamera ovde nije videla ništa. Nema tragova na svakom mestu. Razgovaraj sa ljudima ovde ili klikni 🗺 Mapa da tražiš drugde.", ".sprite, #mapBtn"],
-    talk: ["STEP 6. Read what the person says. Witnesses describe the killer (vehicle, clothes, looks, habits). Suspects tell you where they claim to have been and when. The murder happened at midnight: an alibi that covers midnight and checks out clears that person. Now open your NOTEBOOK.", "KORAK 6. Pročitaj šta osoba kaže. Svedoci opisuju ubicu (prevoz, odeću, izgled, navike). Osumnjičeni kažu gde tvrde da su bili i kada. Ubistvo se desilo u ponoć: alibi koji pokriva ponoć i potvrđen je skida sumnju sa te osobe. Sada otvori BELEŽNICU.", "#nbToggle"],
+    talk: ["STEP 6. Read what the person says. Witnesses describe the killer (vehicle, clothes, looks, habits). Suspects tell you where they claim to have been and when. The murder happened at midnight: an alibi that covers midnight and checks out clears that person. The buttons under the dialogue let you ask more questions (1h each). Now open your NOTEBOOK.", "KORAK 6. Pročitaj šta osoba kaže. Svedoci opisuju ubicu (prevoz, odeću, izgled, navike). Osumnjičeni kažu gde tvrde da su bili i kada. Ubistvo se desilo u ponoć: alibi koji pokriva ponoć i potvrđen je skida sumnju sa te osobe. Dugmad ispod dijaloga omogućavaju dodatna pitanja (po 1h). Sada otvori BELEŽNICU.", "#nbToggle"],
     notebook: ["STEP 7. This is your notebook. NOTES lists everything you heard. PEOPLE holds a file on everyone you found. CASE sums up what you know about the killer. COMPARE lines the clues up against people. POLICE gives you help. Click PEOPLE.", "KORAK 7. Ovo je tvoja beležnica. BELEŠKE sadrže sve što si čuo. LJUDI čuvaju dosije svakog pronađenog. SLUČAJ sažima šta znaš o ubici. UPOREDI poredi tragove sa ljudima. POLICIJA ti pomaže. Klikni LJUDI.", "#tab-people"],
     tabpeople: ["STEP 8. Each card shows a portrait, job, where to find the person, looks and alibi. 'Reported at' means you only heard of them: go there to meet them. Now click CASE.", "KORAK 8. Svaka kartica ima portret, posao, gde se osoba nalazi, izgled i alibi. 'Prijavljen na lokaciji' znači da si samo čuo za nju: idi tamo da je upoznaš. Sada klikni SLUČAJ.", "#tab-case"],
-    tabcase: ["STEP 9. CASE lists the clues about the killer and who gave them. (?) means the source was unsure. Collect clues in all four categories. Now click COMPARE.", "KORAK 9. SLUČAJ navodi tragove o ubici i ko ih je dao. (?) znači da izvor nije bio siguran. Skupi tragove u sve četiri kategorije. Sada klikni UPOREDI.", "#tab-compare"],
+    tabcase: ["STEP 9. CASE lists the clues about the killer and who gave them. (?) means the source was unsure. Collect clues in all five categories. Now click COMPARE.", "KORAK 9. SLUČAJ navodi tragove o ubici i ko ih je dao. (?) znači da izvor nije bio siguran. Skupi tragove u svih pet kategorija. Sada klikni UPOREDI.", "#tab-compare"],
     compare: ["STEP 10. The CLUES row on top is what you know about the killer. Below are the people you met. Green cells match a clue. The person who matches every clue is the killer, so keep investigating until exactly one person fits. Now click POLICE.", "KORAK 10. Red TRAGOVI gore je ono što znaš o ubici. Ispod su ljudi koje si upoznao. Zelene ćelije se poklapaju sa tragom. Osoba koja se poklapa sa svim tragovima je ubica, zato istražuj dok ne ostane tačno jedna osoba. Sada klikni POLICIJA.", "#tab-police"],
     tabpolice: ["STEP 11. Police can tail a person for 12 hours (2 times per case). When time is almost out you can request a roadblock for +24 hours. When you are sure who it is, press ARREST at the bottom of the notebook. Now click CLOSE.", "KORAK 11. Policija može da prati osobu 12 sati (2 puta po slučaju). Kad vreme skoro istekne, možeš da zatražiš blokadu za +24 sata. Kad si siguran ko je, pritisni UHAPSI na dnu beležnice. Sada klikni ZATVORI.", "#nbClose"],
     closed: ["STEP 12. Carry on: click 🗺 Map, visit other places, talk to everyone and use 🔎 Alibis to check who really was where. In this tutorial a wrong arrest only warns you, in real cases it ends the case.", "KORAK 12. Nastavi: klikni 🗺 Mapa, poseti druga mesta, razgovaraj sa svima i koristi 🔎 Alibiji da proveriš ko je stvarno bio gde. U ovom tutorijalu pogrešno hapšenje samo upozorava, u pravim slučajevima završava slučaj.", "#mapBtn"],
-    found: ["FOUND HIM! All 4 clues match this person, so they are the killer. Open the NOTEBOOK if it is closed, press ARREST SUSPECT and click their name. Well done, Detective!", "NAŠAO SI GA! Sva 4 traga se poklapaju sa ovom osobom, pa je to sigurno ubica. Otvori BELEŽNICU ako je zatvorena, pritisni UHAPSI OSUMNJIČENOG i klikni na njeno ime. Svaka čast, detektive!", "#nbToggle, #arrestSection .danger-btn"],
+    found: ["FOUND HIM! All 5 clues match this person, so they are the killer. Open the NOTEBOOK if it is closed, press ARREST SUSPECT and click their name. Well done, Detective!", "NAŠAO SI GA! Sva 5 tragova se poklapa sa ovom osobom, pa je to sigurno ubica. Otvori BELEŽNICU ako je zatvorena, pritisni UHAPSI OSUMNJIČENOG i klikni na njeno ime. Svaka čast, detektive!", "#nbToggle, #arrestSection .danger-btn"],
     loc2: ["Tip: 🔎 Alibis shows who really was at this place that night and reveals new people. Click it.", "Savet: 🔎 Alibiji pokazuju ko je zaista bio na ovom mestu te noći i otkrivaju nove ljude. Klikni na to.", "#alibiBtn"]
 };
 function tip(k, en2, sr2) {
@@ -265,10 +294,10 @@ function typeText(t) {
 
 // ================= SCREENS =================
 function switchScreen(id) {
-    ["menuScreen","settingsScreen","quitScreen","usaScreen","officeScreen","introScreen","mapScreen","locationScreen","endScreen"].forEach(s => el(s).classList.add("hidden"));
+    ["menuScreen","settingsScreen","quitScreen","usaScreen","officeScreen","storyScreen","hubScreen","introScreen","mapScreen","locationScreen","endScreen"].forEach(s => el(s).classList.add("hidden"));
     el(id).classList.remove("hidden");
     if (id === "menuScreen") updateMenuRank();
-    const menu = ["menuScreen","settingsScreen","quitScreen","usaScreen","officeScreen"].includes(id);
+    const menu = ["menuScreen","settingsScreen","quitScreen","usaScreen","officeScreen","storyScreen","hubScreen"].includes(id);
     el("menuView").classList.toggle("hidden", !menu);
     el("gameView").classList.toggle("hidden", menu);
     const arrest = ["mapScreen","locationScreen"].includes(id);
@@ -301,16 +330,27 @@ function showUSA() {
 }
 
 // ================= CASE GENERATION =================
-function startNewCase(city, diff, tutorial) {
+function startNewCase(city, diff, tutorial, chapter) {
     audioInit();
     const d = DIFFICULTY[diff];
-    state = { tutorial: !!tutorial, tipsSeen: {}, done: {}, clues: {}, tails: 2, pending: [], warned: false, roadblock: false, city, diff, time: 168, awake: 0, notes: [], currentLocation: null, unlocked: {}, known: {},
+    state = { chapter: chapter == null ? null : chapter, tutorial: !!tutorial, tipsSeen: {}, done: {}, clues: {}, objectives: [], collapsed: false, tails: 2, pending: [], warned: false, roadblock: false, city, diff, time: 168, awake: 0, notes: [], currentLocation: null, unlocked: {}, known: {},
               victim: pick(VICTIMS), people: [], cctvText: "",
               locations: shuffle(CITIES[city].locs).slice(0, 6).map(([name, type, x, y]) => ({ name, type, x, y })) };
     state.crimeIdx = rnd(state.locations.length);
     const crime = state.locations[state.crimeIdx];
     state.notes = [`Case opened: ${state.victim} was found dead near ${crime.name} at midnight.`];
     buildPeople(d);
+    if (!tutorial) state.objectives = shuffle(OBJECTIVES).slice(0, 2);
+    state.coffee = profile.coffee ? 3 : 0; profile.coffee = 0;
+    if (!tutorial) {
+        if (profile.nextTails) { state.tails += profile.nextTails; profile.nextTails = 0; }
+        if (profile.nextLead) { discover(pick(state.people), "tipped by your informant, found at"); profile.nextLead = 0; }
+        saveProfile();
+    }
+    if (chapter != null) {
+        addNote("♜ A black chess rook was left next to the body.");
+        if (chapter === STORY.length - 1) { state.killer.name = "Silas Crane"; state.killer.job = "Shipping magnate"; }
+    }
     if (!tutorial && profile.items.informant) { const q = pick(state.people); discover(q, "tipped by your informant, found at"); }
 
     el("cityTitle").innerText = city;
@@ -318,6 +358,8 @@ function startNewCase(city, diff, tutorial) {
     el("introBanner").innerHTML = scene(crime.type, crime.name, hash(city + crime.name), true);
     el("introText").innerText = `A murder has been reported in ${city}! The body of ${state.victim} was found last night at midnight near ${crime.name}. You have exactly one week (168 hours) to search the city, check cameras, find and question people, and verify alibis. Travel and every action cost time, and you need sleep. You have no suspect list: find them yourself. Good luck, Detective.`;
     if (tutorial) el("introText").innerText = "FIRST DAY ON THE JOB. " + el("introText").innerText;
+    if (chapter != null) el("introText").innerText = "📖 " + (lang === "sr" ? "POGLAVLJE " : "CHAPTER ") + (chapter + 1) + ": " + STORY[chapter].title[lang === "sr" ? 1 : 0] + ".\n\n" + el("introText").innerText;
+    if (state.objectives.length) el("introText").innerText += "\n\n📋 Side objectives (bonus cash):\n" + state.objectives.map(o => `• ${o.t} (+$${o.bonus})`).join("\n");
     el("tipBox").classList.add("hidden");
     updateHeader(); updateNotebook(); updatePeople(); showTab("notes");
     switchScreen("introScreen");
@@ -328,7 +370,7 @@ function buildPeople(d) {
     const used = new Set(), L = state.locations.length;
     const nm = () => { let n; do { n = pick(FIRST) + " " + pick(LAST); } while (used.has(n)); used.add(n); return n; };
     const otherThan = (t, v) => { let x; do { x = rnd(POOL[t].length); } while (x === v); return x; };
-    const kt = { vehicle: rnd(VEHICLES.length), clothing: rnd(CLOTHES.length), feature: rnd(FEATURES.length), habit: rnd(HABITS.length) };
+    const kt = { vehicle: rnd(VEHICLES.length), clothing: rnd(CLOTHES.length), feature: rnd(FEATURES.length), habit: rnd(HABITS.length), tie: rnd(TIES.length) };
     state.kt = kt;
     const nS = d.suspects, kIdx = rnd(nS);
     let liar; do { liar = rnd(nS); } while (liar === kIdx);
@@ -354,10 +396,12 @@ function buildPeople(d) {
 
     const l1 = rnd(L); let l2; do { l2 = rnd(L); } while (l2 === l1);
     state.people.push({ id: "w1", role: "witness", name: nm(), job: wj[0], traits: mk(false), loc: l1, trait: "vehicle", gate: null, next: d.gated ? "w2" : null });
-    state.people.push({ id: "w2", role: "witness", name: nm(), job: wj[1], traits: mk(false), loc: l2, trait: "feature", gate: d.gated ? "w1" : null, next: null });
+    state.people.push({ id: "w2", role: "witness", name: nm(), job: wj[1], traits: mk(false), loc: l2, trait: "feature", gate: d.gated ? "w1" : null, next: d.gated ? "w3" : null });
+    let l3; do { l3 = rnd(L); } while (l3 === l1 || l3 === l2);
+    state.people.push({ id: "w3", role: "witness", name: nm(), job: wj[2], traits: mk(false), loc: l3, trait: "tie", gate: d.gated ? "w2" : null, next: null });
     for (let k = 0; k < d.decoys; k++) {
         const trait = pick(TR);
-        state.people.push({ id: "d" + k, role: "witness", name: nm(), job: wj[2 + k], traits: mk(false), loc: rnd(L), trait, decoy: true, falseVal: otherThan(trait, kt[trait]) });
+        state.people.push({ id: "d" + k, role: "witness", name: nm(), job: wj[3 + k], traits: mk(false), loc: rnd(L), trait, decoy: true, falseVal: otherThan(trait, kt[trait]) });
     }
     state.cctvText = d.cctv
         ? `[CCTV FOOTAGE] Blurry video from midnight. The figure is ${CLOTHES[kt.clothing].seen}. Face not visible.`
@@ -376,7 +420,7 @@ function updateHeader() {
 
 function spend(h) {
     state.time -= h; state.awake += h;
-    if (state.awake >= awakeLimit()) { state.time -= 8; state.awake = 0; addNote("You collapsed from exhaustion and lost 8 hours."); toast("😴 You have been awake too long. You must sleep: 8 hours pass."); sfx("bad"); }
+    if (state.awake >= awakeLimit()) { state.time -= 8; state.awake = 0; state.collapsed = true; addNote("You collapsed from exhaustion and lost 8 hours."); toast("😴 You have been awake too long. You must sleep: 8 hours pass."); sfx("bad"); }
     updateHeader();
     assistantTick();
     if (state.time <= 0) { endGame(false, `Time ran out! The killer escaped the jurisdiction of ${state.city}.`); return false; }
@@ -421,6 +465,9 @@ function enterLocation(i) {
     el("locationBanner").innerHTML = scene(loc.type, loc.name, hash(state.city + loc.name), i === state.crimeIdx);
     el("reportBox").innerText = "";
     el("searchBtn").classList.toggle("hidden", i !== state.crimeIdx);
+    el("flashBtn").classList.toggle("hidden", !profile.items.flash);
+    el("uvBtn").classList.toggle("hidden", !profile.items.uv);
+    el("printBtn").classList.toggle("hidden", !(profile.items.prints && i === state.crimeIdx));
     el("dialogueContainer").classList.add("hidden");
     renderPeople();
     switchScreen("locationScreen");
@@ -570,6 +617,103 @@ function renderThemes() {
         .map(([k, n]) => `<button class="button" onclick="setTheme('${k}'); renderThemes()">${n}${(profile.theme || "") === k ? " ✔" : ""}</button>`).join("");
 }
 
+function renderAsk(p) {
+    const box = el("askBtns"), kn = state.known[p.id], a = kn.asked = kn.asked || {};
+    box.innerHTML = "";
+    const add = (key, label) => {
+        if (a[key]) return;
+        const b = document.createElement("button");
+        b.className = "button"; b.innerText = label;
+        b.onclick = () => { a[key] = 1; askMore(p, key); };
+        box.appendChild(b);
+    };
+    add("victim", "💬 Ask about the victim");
+    if (p.role === "suspect") add("press", "😠 Press about the alibi");
+    if (profile.items.prints && state.prints) add("print", "🧤 Take fingerprints");
+    add("who", "👥 Who else was there?");
+}
+
+function askMore(p, key) {
+    if (!spend(1)) return;
+    const kn = state.known[p.id];
+    let text = "";
+    if (key === "victim") {
+        if (p.role === "suspect") {
+            const say = TIES[p.traits.tie].say;
+            text = `"${say}"`;
+            addNote(`${p.name} on the victim: ${say}`);
+        } else text = `"${pick(["I barely knew them. I heard they had a lot of enemies.", "They were a quiet person. Somebody close to them was afraid, I think."])}"`;
+    } else if (key === "print") {
+        const killer = p.id === state.killer.id, r = Math.random();
+        const res = killer ? (r < 0.85 ? "match" : "unclear") : (r < 0.05 ? "unclear" : "none");
+        text = res === "match" ? `*hands over their prints reluctantly*` : `*gives their prints calmly* "Take them, I have nothing to hide."`;
+        addNote(`🧤 ${p.name}${res === "match" ? ": prints MATCH the ones from the scene." : res === "unclear" ? ": prints are inconclusive (smudged)." : ": prints do not match."}`);
+        if (res === "match") sfx("lead");
+    } else if (key === "press") {
+        const liar = p.truthful === false && p.alibiLoc !== null;
+        if (liar && Math.random() < 0.65) {
+            kn.verdict = "bad";
+            text = p.id === state.killer.id ? `*sweats* "All right... I wasn't there the whole time."` : `*looks away* "Okay, I wasn't there. I was meeting someone I shouldn't. It has nothing to do with the murder."`;
+            addNote(`${p.name} cracked under pressure: the alibi was a lie.`);
+            sfx("lead");
+        } else text = pick([`*stares back* "I told you the truth. Are we done?"`, `"How dare you! Check it if you must."`]);
+    } else {
+        const u = state.people.filter(q => q.id !== p.id && !state.known[q.id]);
+        if (u.length) {
+            const q = pick(u);
+            text = `"Try ${q.name}, the ${q.job.toLowerCase()}. Usually at ${state.locations[q.loc].name}."`;
+            discover(q, "usually found at");
+        } else text = `"I don't know anyone else."`;
+    }
+    updatePeople();
+    renderAsk(p);
+    typeText(text);
+    speak(dyn(text), p);
+}
+
+function unknownTraits() { return TR.filter(t => !(state.clues[t] || []).length); }
+function toolReveal(prefix, src) {
+    const u = unknownTraits();
+    if (!u.length) { el("reportBox").innerText = "Nothing new here."; return; }
+    const t = pick(u), v = state.kt[t], name = TRAITS.find(x => x[1] === t)[0];
+    addClue(t, v, src, false);
+    const msg = `${prefix}${name}: ${POOL[t][v].file}.`;
+    addNote(msg);
+    el("reportBox").innerText = msg;
+    sfx("lead");
+}
+function toolLead(prefix) {
+    const q = pick(state.people.filter(x => !state.known[x.id]));
+    discover(q, "usually found at");
+    el("reportBox").innerText = prefix + "A new lead was added to your notebook.";
+}
+function useTool(kind) {
+    const key = kind + state.currentLocation;
+    if (state.done[key]) { el("reportBox").innerText = "You already used this tool here. Check your NOTEBOOK (Notes)."; return; }
+    state.done[key] = 1;
+    if (!spend(1)) return;
+    const crime = state.currentLocation === state.crimeIdx, canLead = state.people.some(q => !state.known[q.id]);
+    if (kind === "flash") {
+        if (crime) toolReveal("🔦 Flashlight reveals a trace. ", "Flashlight");
+        else if (canLead && Math.random() < 0.35) toolLead("🔦 You find a business card in a dark corner. ");
+        else el("reportBox").innerText = "🔦 Nothing but dust in the dark corners.";
+    } else {
+        if (crime) toolReveal("🔬 UV light reveals traces. ", "UV light");
+        else if (canLead && Math.random() < 0.25) toolLead("🔬 UV light shows a hidden note. ");
+        else el("reportBox").innerText = "🔬 The UV light shows nothing useful here.";
+    }
+}
+function useFlash() { useTool("flash"); }
+function useUV() { useTool("uv"); }
+function collectPrints() {
+    if (state.prints) { el("reportBox").innerText = "You already collected the prints. Check your NOTEBOOK (Notes)."; return; }
+    if (!spend(1)) return;
+    state.prints = true;
+    addNote("🧤 Fingerprints collected at the scene.");
+    el("reportBox").innerText = "🧤 Fingerprints collected at the scene.";
+    sfx("lead");
+}
+
 function checkAlibis() {
     const idx = state.currentLocation, name = state.locations[idx].name, key = "alibi" + idx;
     if (state.done[key]) { el("reportBox").innerText = "You already verified the alibis here. Check your NOTEBOOK (Notes or Compare)."; return; }
@@ -588,6 +732,7 @@ function checkAlibis() {
 }
 
 function describe(trait, v) {
+    if (trait === "tie") return pick([`The victim told me they feared someone close: ${v.seen}.`, `The victim was scared of one person: ${v.seen}.`]);
     if (trait === "vehicle") return pick([`I saw them ${v.seen}.`, `Whoever it was, I watched them ${v.seen}.`]);
     if (trait === "clothing") return pick([`I noticed they were ${v.seen}.`, `They were ${v.seen}, I remember that much.`]);
     if (trait === "habit") return pick([`I noticed they ${v.seen}.`, `The smell gave it away: they ${v.seen}.`]);
@@ -600,6 +745,7 @@ function talkTo(p) {
         el("personAvatar").innerHTML = portrait(p, true);
         el("dialogueName").innerText = `${p.name} - ${p.job}`;
         typeText(kn.last + "  (Already questioned. See your NOTEBOOK.)");
+        renderAsk(p);
         el("dialogueContainer").classList.remove("hidden");
         return;
     }
@@ -617,7 +763,7 @@ function talkTo(p) {
         addNote(`${p.name} claims: ${state.known[p.id].claim}`);
         if (p.motive) text += ` "${p.motive}"`;
         const unknown = state.people.filter(q => q.id !== p.id && !state.known[q.id]);
-        if (unknown.length && Math.random() < 0.7) {
+        if (unknown.length && Math.random() < 0.4) {
             const q = pick(unknown);
             text += ` "Ask ${q.name}, the ${q.job.toLowerCase()}. Usually at ${state.locations[q.loc].name}."`;
             discover(q, "usually found at");
@@ -650,7 +796,8 @@ function talkTo(p) {
     el("personAvatar").innerHTML = portrait(p, true);
     el("dialogueName").innerText = `${p.name} - ${p.job}`;
     typeText(text);
-    speak(text, p);
+    speak(dyn(text), p);
+    renderAsk(p);
     tip("talk");
     el("dialogueContainer").classList.remove("hidden");
 }
@@ -687,7 +834,7 @@ function showTab(t) {
     if (t === "police") updatePolice();
 }
 
-const TRAITS = [["Transport", "vehicle"], ["Clothing", "clothing"], ["Feature", "feature"], ["Habit", "habit"]];
+const TRAITS = [["Transport", "vehicle"], ["Clothing", "clothing"], ["Feature", "feature"], ["Habit", "habit"], ["Tie", "tie"]];
 
 function updateCase() {
     const c = state.locations[state.crimeIdx];
@@ -696,7 +843,8 @@ function updateCase() {
         const l = state.clues[t] || [];
         h += `<tr><td>${n}</td><td>${l.length ? l.map(x => `${POOL[t][x.v].file}${x.unsure ? " (?)" : ""} <small>source: ${x.src}</small>`).join("<br>") : "<i>unknown</i>"}</td></tr>`;
     });
-    el("caseFile").innerHTML = h + "</table><p class='hint'>(?) means the source was not sure.</p>";
+    const ob = state.objectives.length ? `<h4>📋 Side objectives (bonus cash)</h4><ul>${state.objectives.map(o => `<li>${o.ok(state) ? "✔" : "…"} ${o.t} (+$${o.bonus})</li>`).join("")}</ul>` : "";
+    el("caseFile").innerHTML = h + "</table><p class='hint'>(?) means the source was not sure.</p>" + ob;
 }
 
 function updatePeople() {
@@ -705,7 +853,7 @@ function updatePeople() {
     let h = ids.length ? "" : `<p class="hint">Nobody yet. Explore the city and talk to people.</p>`;
     ids.forEach(id => {
         const p = state.people.find(x => x.id === id), k = state.known[id];
-        const traits = k.met ? `<p>${VEHICLES[p.traits.vehicle].file}; often in ${CLOTHES[p.traits.clothing].file}; ${FEATURES[p.traits.feature].file}; ${HABITS[p.traits.habit].file}.</p>` : `<p>Not met yet. Appearance unknown.</p>`;
+        const traits = k.met ? `<p>${VEHICLES[p.traits.vehicle].file}; often in ${CLOTHES[p.traits.clothing].file}; ${FEATURES[p.traits.feature].file}; ${HABITS[p.traits.habit].file}; tie to the victim: ${TIES[p.traits.tie].file}.</p>` : `<p>Not met yet. Appearance unknown.</p>`;
         const v = k.verdict === "ok" ? "✔ Alibi confirmed" : k.verdict === "bad" ? "✖ Not seen at the alibi location" : "";
         h += `<div class="person-card"><div class="pic">${portrait(p, k.met)}</div><div><h4>${p.name}</h4><p>${p.job}</p><p class="where">📍 ${k.met ? "Found at" : "Reported at"}: ${state.locations[p.loc].name}</p>${traits}${k.claim ? `<p class="claim">Alibi: ${k.claim} ${v}</p>` : ""}</div></div>`;
     });
@@ -759,19 +907,29 @@ function endGame(win, msg) {
     sfx(win ? "win" : "bad");
     msg += ` Hours used: ${168 - Math.max(0, state.time)}. People met: ${Object.values(state.known).filter(k => k.met).length}.`;
     el("tipBox").classList.add("hidden");
-    if (state.tutorial && win) { profile.tutorialDone = true; profile.cash += 50; msg += " Tutorial complete! Reward: $50."; }
+    if (state.tutorial && win) { profile.tutorialDone = true; profile.cash += 50; if (state.chapter != null) profile.chapter = Math.max(profile.chapter, state.chapter + 1); msg += " Tutorial complete! Reward: $50."; }
     else if (state.tutorial) msg += " Tutorial failed. You will try it again.";
     if (win && !state.tutorial) {
         const before = rankIndex();
         profile.solved++;
-        const reward = 100 + Math.max(0, state.time) * 2 + DIFFICULTY[state.diff].need * 100;
+        if (state.chapter != null) profile.chapter = Math.max(profile.chapter, state.chapter + 1);
+        const reward = 100 + Math.max(0, state.time) * 2 + DIFFICULTY[state.diff].need * 100 + (state.chapter != null ? 150 : 0);
         profile.cash += reward; msg += ` Reward: $${reward}.`;
+        const bonus = state.objectives.filter(o => o.ok(state)).reduce((a, o) => a + o.bonus, 0);
+        if (state.objectives.length) { profile.cash += bonus; msg += ` Side objectives: +$${bonus}.`; }
         if (rankIndex() > before) msg += ` ⭐ PROMOTED to ${RANKS[rankIndex()][0]}! New cases unlocked.`;
     }
     saveProfile();
     switchScreen("endScreen");
     el("endTitle").innerText = win ? "🎉 CASE SOLVED!" : "💀 CASE FAILED!";
     el("endText").innerText = msg;
+    const sb = el("storyContBtn"), ch = state.chapter;
+    if (ch != null) {
+        sb.classList.remove("hidden");
+        sb.dataset.en = win ? "📖 CONTINUE STORY" : "📖 RETRY CHAPTER";
+        sb.innerText = tr(sb.dataset.en);
+        sb.onclick = () => (win ? showDebrief(ch) : showBriefing(ch));
+    } else sb.classList.add("hidden");
 }
 
 document.addEventListener("click", () => document.querySelectorAll(".glow").forEach(e => e.classList.remove("glow")), true);
@@ -787,6 +945,9 @@ const SHOP = [
     ["theme_sepia", "🎞 Sepia theme", "Warm vintage colors for the whole game.", 150],
     ["theme_neon", "🌃 Neon theme", "Cyberpunk blue and pink.", 150],
     ["theme_blood", "🩸 Blood theme", "Dark crimson colors.", 200],
+    ["flash", "🔦 Flashlight", "Search dark corners (once per place, 1h).", 200],
+    ["uv", "🔬 UV lamp", "Reveals hidden traces (once per place, 1h).", 300],
+    ["prints", "🧤 Fingerprint kit", "Collect prints at the scene, then test people (1h each).", 400],
     ["thermos", "☕ Thermos", "Stay awake 20 hours instead of 16.", 300],
     ["car", "🚗 Fast car", "All travel is 1 hour faster (minimum 1h).", 400],
     ["informant", "🕶 Informant", "Start every case with one known lead.", 250]
@@ -800,6 +961,7 @@ function showOffice() {
         + (rankIndex() >= 3 ? `<p>👤 Assistant: hired. Reports a new lead every 24 hours.</p>` : `<p>👤 Assistant: unlocks at rank Senior Detective.</p>`);
     switchScreen("officeScreen");
 }
+function leaveOffice() { if (hubFrom) { hubFrom = false; showHub(); } else switchScreen("menuScreen"); }
 function buy(k, c) {
     if (profile.cash < c) return toast("Not enough cash.");
     profile.cash -= c; profile.items[k] = 1; saveProfile(); showOffice();
@@ -813,6 +975,10 @@ const I18N = {
 Object.assign(I18N.sr, { "PEOPLE": "LJUDI", "POLICE": "POLICIJA", "🏳 LEAVE CASE": "🏳 NAPUSTI SLUČAJ", "📝 DETECTIVE'S NOTEBOOK": "📝 DETEKTIVOVA BELEŽNICA", "🎨 Theme": "🎨 Tema", "BUY": "KUPI", "📍 CITY MAP: click a location to travel there": "📍 MAPA GRADA: klikni na lokaciju da otputuješ" });
 Object.assign(I18N.es, { "PEOPLE": "PERSONAS", "POLICE": "POLICÍA", "🏳 LEAVE CASE": "🏳 ABANDONAR CASO", "📝 DETECTIVE'S NOTEBOOK": "📝 LIBRETA DEL DETECTIVE", "🎨 Theme": "🎨 Tema", "BUY": "COMPRAR", "📍 CITY MAP: click a location to travel there": "📍 MAPA: haz clic en un lugar para viajar" });
 Object.assign(I18N.it, { "PEOPLE": "PERSONE", "POLICE": "POLIZIA", "🏳 LEAVE CASE": "🏳 ABBANDONA CASO", "📝 DETECTIVE'S NOTEBOOK": "📝 TACCUINO DEL DETECTIVE", "🎨 Theme": "🎨 Tema", "BUY": "COMPRA", "📍 CITY MAP: click a location to travel there": "📍 MAPPA: clicca un luogo per viaggiare" });
+Object.assign(I18N.sr, { "📖 STORY MODE": "📖 PRIČA", "▶ ACCEPT CASE": "▶ PRIHVATI SLUČAJ", "▶ NEXT CHAPTER": "▶ SLEDEĆE POGLAVLJE", "📖 CONTINUE STORY": "📖 NASTAVI PRIČU", "📖 RETRY CHAPTER": "📖 PONOVI POGLAVLJE", "▶ FREE PLAY": "▶ SLOBODNA IGRA", "Story": "Priča" });
+Object.assign(I18N.es, { "📖 STORY MODE": "📖 HISTORIA", "▶ ACCEPT CASE": "▶ ACEPTAR CASO", "▶ NEXT CHAPTER": "▶ SIGUIENTE CAPÍTULO", "📖 CONTINUE STORY": "📖 CONTINUAR HISTORIA", "📖 RETRY CHAPTER": "📖 REPETIR CAPÍTULO", "▶ FREE PLAY": "▶ JUEGO LIBRE", "Story": "Historia" });
+Object.assign(I18N.it, { "📖 STORY MODE": "📖 STORIA", "▶ ACCEPT CASE": "▶ ACCETTA IL CASO", "▶ NEXT CHAPTER": "▶ CAPITOLO SUCCESSIVO", "📖 CONTINUE STORY": "📖 CONTINUA LA STORIA", "📖 RETRY CHAPTER": "📖 RIPROVA IL CAPITOLO", "▶ FREE PLAY": "▶ GIOCO LIBERO", "Story": "Storia" });
+Object.assign(I18N.sr, { "🔦 Flashlight (1h)": "🔦 Lampa (1h)", "🔬 UV lamp (1h)": "🔬 UV lampa (1h)", "🧤 Collect prints (1h)": "🧤 Uzmi otiske (1h)" });
 let lang = "en";
 try { lang = localStorage.getItem("cc_lang") || "en"; } catch (e) {}
 const tr = k => (I18N[lang] && I18N[lang][k]) || k;
@@ -917,7 +1083,29 @@ const DYN = { sr: {
  "🕶 Informant": "🕶 Doušnik", "Start every case with one known lead.": "Svaki slučaj počinješ sa jednim poznatim tragom.", "🎞 Sepia theme": "🎞 Sepija tema", "Warm vintage colors for the whole game.": "Tople vintidž boje za celu igru.",
  "🌃 Neon theme": "🌃 Neon tema", "Cyberpunk blue and pink.": "Sajberpank plava i roze.", "🩸 Blood theme": "🩸 Tema krvi", "Dark crimson colors.": "Tamne grimizne boje.",
  "👤 Assistant: hired. Reports a new lead every 24 hours.": "👤 Pomoćnik: angažovan. Svaka 24 sata javlja novi trag.", "👤 Assistant: unlocks at rank Senior Detective.": "👤 Pomoćnik: otključava se na činu Viši detektiv.",
- " Hours used: ": " Iskorišćeno sati: ", ". People met: ": ". Upoznatih ljudi: ", "Police officer": "Policajac", "Bartender": "Konobar", "CEO": "Direktor", "Lawyer": "Advokat", "Mechanic": "Mehaničar", "Student": "Student", "Pharmacist": "Farmaceut", "Accountant": "Računovođa", "Bouncer": "Izbacivač", "Journalist": "Novinar", "Chef": "Kuvar", "Landlord": "Stanodavac",
+ " Hours used: ": " Iskorišćeno sati: ", ". People met: ": ". Upoznatih ljudi: ", "💬 Ask about the victim": "💬 Pitaj o žrtvi", "😠 Press about the alibi": "😠 Pritisni zbog alibija", "👥 Who else was there?": "👥 Ko je još bio tamo?",
+ " on the victim: ": " o žrtvi: ", "We were business partners.": "Bili smo poslovni partneri.", "We used to be together.": "Nekad smo bili zajedno.", "I owed them money.": "Dugovao/la sam im novac.", "We were rivals, everyone knew.": "Bili smo rivali, svi su to znali.", "I lived next door.": "Živeo/la sam pored njih.", "I used to work for them.": "Nekad sam radio/la za njih.",
+ "I barely knew them. I heard they had a lot of enemies.": "Jedva sam ga/je poznavao/la. Čuo/la sam da je imao/la mnogo neprijatelja.", "They were a quiet person. Somebody close to them was afraid, I think.": "Bila je tiha osoba. Mislim da se plašila nekoga bliskog.",
+ "*sweats* ": "*preznoji se* ", "All right... I wasn't there the whole time.": "U redu... nisam bio/la tamo sve vreme.", "*looks away* ": "*skrene pogled* ",
+ "Okay, I wasn't there. I was meeting someone I shouldn't. It has nothing to do with the murder.": "Dobro, nisam bio/la tamo. Sastajao/la sam se sa nekim sa kim ne bih trebalo. To nema veze sa ubistvom.",
+ " cracked under pressure: the alibi was a lie.": " je popustio/la pod pritiskom: alibi je bio laž.", "*stares back* ": "*gleda ravno u oči* ", "I told you the truth. Are we done?": "Rekao/la sam vam istinu. Jesmo li gotovi?", "How dare you! Check it if you must.": "Kako se usuđujete! Proverite ako morate.",
+ "I don't know anyone else.": "Ne poznajem nikog drugog.", "Try ": "Probajte: ",
+ "The victim told me they feared someone close: ": "Žrtva mi je rekla da se plaši nekoga bliskog: ", "The victim was scared of one person: ": "Žrtva se plašila jedne osobe: ",
+ "I think The victim told me they feared someone close: ": "Mislim da mi je žrtva rekla da se plaši nekoga bliskog: ", "I think The victim was scared of one person: ": "Mislim da se žrtva plašila jedne osobe: ",
+ "the victim's business partner": "žrtvin poslovni partner", "the victim's ex-lover": "žrtvina bivša veza", "someone who owed the victim money": "neko ko je dugovao žrtvi novac", "the victim's rival": "žrtvin rival", "the victim's neighbor": "žrtvin komšija", "the victim's former employee": "žrtvin bivši zaposleni",
+ "; tie to the victim: ": "; veza sa žrtvom: ", "Tie": "Veza sa žrtvom",
+ "📋 Side objectives (bonus cash)": "📋 Dodatni ciljevi (bonus novac)", "📋 Side objectives (bonus cash):": "📋 Dodatni ciljevi (bonus novac):", " Side objectives: ": " Dodatni ciljevi: ",
+ "Solve it with at least 72 hours left.": "Reši ga sa bar 72 sata preostalo.", "Do not use any police tails.": "Ne koristi praćenje policije.", "Meet at least 8 people.": "Upoznaj bar 8 ljudi.", "Never collapse from exhaustion.": "Nikad se ne sruši od iscrpljenosti.",
+ "Shipping magnate": "Brodovlasnik", "♜ A black chess rook was left next to the body.": "♜ Pored tela je ostavljen crni šahovski top.",
+ "🔦 Flashlight reveals a trace. ": "🔦 Lampa otkriva trag. ", "🔬 UV light reveals traces. ": "🔬 UV svetlo otkriva tragove. ", "Nothing new here.": "Ovde nema ničeg novog.", "Flashlight": "Lampa", "UV light": "UV svetlo",
+ "🔦 You find a business card in a dark corner. ": "🔦 U mračnom uglu nalaziš vizit-kartu. ", "🔬 UV light shows a hidden note. ": "🔬 UV svetlo pokazuje skrivenu poruku. ", "A new lead was added to your notebook.": "Novi trag je dodat u tvoju beležnicu.",
+ "🔦 Nothing but dust in the dark corners.": "🔦 U mračnim uglovima ima samo prašine.", "🔬 The UV light shows nothing useful here.": "🔬 UV svetlo ovde ne pokazuje ništa korisno.", "You already used this tool here. Check your NOTEBOOK (Notes).": "Već si koristio ovaj alat ovde. Pogledaj BELEŽNICU (Beleške).",
+ "🧤 Fingerprints collected at the scene.": "🧤 Otisci prstiju prikupljeni na mestu zločina.", "You already collected the prints. Check your NOTEBOOK (Notes).": "Već si uzeo otiske. Pogledaj BELEŽNICU (Beleške).",
+ ": prints MATCH the ones from the scene.": ": otisci SE POKLAPAJU sa onima sa mesta zločina.", ": prints do not match.": ": otisci se ne poklapaju.", ": prints are inconclusive (smudged).": ": otisci su neubedljivi (razmazani).",
+ "*hands over their prints reluctantly*": "*nerado daje otiske*", "*gives their prints calmly* ": "*mirno daje otiske* ", "Take them, I have nothing to hide.": "Uzmite ih, nemam šta da krijem.", "🧤 Take fingerprints": "🧤 Uzmi otiske",
+ "🔦 Flashlight": "🔦 Lampa", "Search dark corners (once per place, 1h).": "Pretraži mračne uglove (jednom po mestu, 1h).", "🔬 UV lamp": "🔬 UV lampa", "Reveals hidden traces (once per place, 1h).": "Otkriva skrivene tragove (jednom po mestu, 1h).",
+ "🧤 Fingerprint kit": "🧤 Komplet za otiske", "Collect prints at the scene, then test people (1h each).": "Uzmi otiske sa mesta zločina, pa testiraj ljude (po 1h).",
+ "Police officer": "Policajac", "Bartender": "Konobar", "CEO": "Direktor", "Lawyer": "Advokat", "Mechanic": "Mehaničar", "Student": "Student", "Pharmacist": "Farmaceut", "Accountant": "Računovođa", "Bouncer": "Izbacivač", "Journalist": "Novinar", "Chef": "Kuvar", "Landlord": "Stanodavac",
  "Nurse": "Medicinar", "Tattoo artist": "Tatu majstor", "Professor": "Profesor", "Florist": "Cvećar", "Musician": "Muzičar", "Realtor": "Agent za nekretnine", "Dealer": "Diler", "Taxi dispatcher": "Taksi dispečer",
  "Street vendor": "Ulični prodavac", "Night janitor": "Noćni domar", "Taxi driver": "Taksista", "Barista": "Barista", "Dock worker": "Lučki radnik", "Newsstand clerk": "Prodavac na kiosku", "Paramedic": "Bolničar", "Security guard": "Čuvar", "Hot dog vendor": "Prodavac viršli", "Bus driver": "Vozač autobusa", "Night nurse": "Noćna sestra"
 } };
@@ -964,6 +1152,167 @@ function checkFound() {
     if (perfect.length === 1) tip("found");
 }
 
+// ================= STORY MODE =================
+const STORY = [
+ { city: "Chicago", diff: "easy", title: ["The Black Rook", "Crni top"],
+   brief: ["Chief Marlow: “A body by the lake, and someone left a black chess rook beside it. Could be nothing, Rookie. Treat it like any case, but keep that rook in your notes.”", "Šef Marlow: „Telo pored jezera, a neko je pored njega ostavio crnog šahovskog topa. Možda ništa ne znači, početniče. Radi kao na svakom slučaju, ali zapamti tog topa.“"],
+   debrief: ["The killer talks before the cuffs click: someone called the Architect paid for the job. Marlow frowns: “Keep this between us.”", "Ubica progovori pre nego što mu stave lisice: za posao ga je platio neko ko se zove Arhitekta. Marlow se mršti: „Neka ostane među nama.“"] },
+ { city: "New York", diff: "easy", title: ["Second Rook", "Drugi top"],
+   brief: ["Chief Marlow: “Another murder, another black rook. Detective Vance from Internal Affairs is on it too, and he hates rookies stealing his collar. Beat him to it.”", "Šef Marlow: „Još jedno ubistvo, još jedan crni top. Detektiv Vance iz Unutrašnje kontrole je takođe na slučaju i mrzi početnike koji mu otimaju uhapšenika. Preteci ga.“"],
+   debrief: ["Vance arrives too late and glares at you. In the killer’s pocket: a ferry ticket stub from Miami.", "Vance stiže prekasno i mrko te gleda. U džepu ubice: ostatak karte za trajekt iz Majamija."],
+   choice: { q: ["Vance offers his file on the Architect in return for a favor. What do you do?", "Vance nudi svoj dosije o Arhitekti za uzvrat uslugu. Šta radiš?"], o: [
+     { t: ["Accept the file (+1 police tail in the next case)", "Prihvati dosije (+1 praćenje policije u sledećem slučaju)"], e: "tail", r: ["Vance’s file helps: the police owe you one.", "Vanceov dosije pomaže: policija ti je dužna uslugu."] },
+     { t: ["Decline, stay independent (+$200)", "Odbij i ostani nezavisan (+200$)"], e: "cash200", r: ["Vance shrugs. You keep your independence and a bit of cash.", "Vance sleže ramenima. Ostaješ nezavisan i nešto bogatiji."] }] } },
+ { city: "Miami", diff: "normal", title: ["Dead Man’s Ticket", "Karta mrtvaca"],
+   brief: ["Chief Marlow: “The ferry stub points to Miami: a club owner is dead, with a black rook in his glass. Everyone here has something to hide, so check every alibi.”", "Šef Marlow: „Karta za trajekt vodi u Majami: vlasnik kluba je mrtav, a u njegovoj čaši je crni top. Svako ovde nešto krije, zato proveri svaki alibi.“"],
+   debrief: ["A dying confession names the Architect’s bank: a shell company in New Orleans. Marlow tells you to pack quietly.", "Ubica pred kraj priznaje: Arhitektina banka je fiktivna firma u Nju Orleansu. Marlow ti kaže da tiho spakuješ stvari."] },
+ { city: "Boston", diff: "normal", title: ["The Professor", "Profesor"],
+   brief: ["Chief Marlow: “A retired professor lies dead in the library. He once taught three names on my list. Coincidence? I don’t believe in those.”", "Šef Marlow: „Penzionisani profesor leži mrtav u biblioteci. Nekad je predavao trojici sa moje liste. Slučajnost? Ja ne verujem u to.“"],
+   debrief: ["His notes show a pattern: every victim knew the same secret about the harbor. Someone is silencing witnesses.", "Njegove beleške pokazuju obrazac: svaka žrtva je znala istu tajnu o luci. Neko ućutkuje svedoke."],
+   choice: { q: ["Whisper, a street informant, offers to dig for you. Do you trust him?", "Šapat, ulični doušnik, nudi da kopa za tebe. Veruješ li mu?"], o: [
+     { t: ["Trust Whisper (start the next case with a known lead)", "Veruj Šapatu (sledeći slučaj počinješ sa poznatim tragom)"], e: "lead", r: ["Whisper grins and vanishes into the crowd. He will have something for you.", "Šapat se ceri i nestaje u gomili. Imaće nešto za tebe."] },
+     { t: ["Don’t trust him (+$150)", "Ne veruj mu (+150$)"], e: "cash150", r: ["You pass on Whisper. Safer, maybe, and richer.", "Odbijaš Šapata. Možda sigurnije, a sigurno bogatije."] }] } },
+ { city: "New Orleans", diff: "normal", title: ["Voodoo and Debts", "Vudu i dugovi"],
+   brief: ["Chief Marlow: “The shell company’s trail ends at a riverboat casino. A bartender is dead and a rook sits in a bowl of gumbo. Someone inside the department is leaking, so trust nobody.”", "Šef Marlow: „Trag fiktivne firme završava na kockarskom brodu. Konobar je mrtav, a u činiji gumba je top. Neko iz policije odaje informacije, zato ne veruj nikome.“"],
+   debrief: ["The leak is confirmed: the killer knew the police schedule. From now on, your notebook is the only thing you trust.", "Curenje je potvrđeno: ubica je znao raspored policije. Od sada veruješ samo svojoj beležnici."] },
+ { city: "Seattle", diff: "hard", title: ["Rain Check", "Kiša i sumnje"],
+   brief: ["Detective Vance: “Seattle. Heavy rain, heavier case. Witnesses are nervous and the cameras are junk. Be careful, rookie. The Architect knows your name.”", "Detektiv Vance: „Sijetl. Jaka kiša, još teži slučaj. Svedoci su nervozni, a kamere beskorisne. Čuvaj se, početniče. Arhitekta zna tvoje ime.“"],
+   debrief: ["A note under your door: “You are close. Stop.” You sleep with the light on.", "Poruka ispod vrata: „Blizu si. Odustani.“ Spavaš sa upaljenim svetlom."],
+   choice: { q: ["Marlow suggests going public. The press could help, or warn the Architect.", "Marlow predlaže da se izađe u javnost. Štampa može da pomogne ili da upozori Arhitektu."], o: [
+     { t: ["Go public (+$250)", "Izađi u javnost (+250$)"], e: "cash250", r: ["Headlines everywhere. Donations pour in, and so do threats.", "Naslovi svuda. Stižu donacije, a i pretnje."] },
+     { t: ["Stay quiet (+1 police tail and a known lead next case)", "Ćuti (+1 praćenje policije i poznat trag u sledećem slučaju)"], e: "tail+lead", r: ["Silence pays off: your sources stay loyal.", "Tišina se isplati: tvoji izvori ostaju odani."] }] } },
+ { city: "Los Angeles", diff: "hard", title: ["Hollywood Noir", "Holivudski noar"],
+   brief: ["Chief Marlow: “A producer dead on a studio lot, a rook in the prop department. The Architect is toying with you now. Every suspect has a perfect story. Find the one that cracks.”", "Šef Marlow: „Producent mrtav na filmskom setu, top u rekviziti. Arhitekta se sada igra sa tobom. Svaki osumnjičeni ima savršenu priču. Nađi onu koja puca.“"],
+   debrief: ["Vance finally helps: the Architect’s list of targets ends with two names, Marlow’s and yours.", "Vance konačno pomaže: Arhitektina lista meta se završava sa dva imena: Marlowovim i tvojim."] },
+ { city: "Las Vegas", diff: "expert", title: ["The Architect", "Arhitekta"],
+   brief: ["Chief Marlow: “Las Vegas. The Architect’s final game: a casino owner dead and a rook placed on a police badge. Five clues, one chance, no mistakes.”", "Šef Marlow: „Las Vegas. Arhitektina poslednja partija: vlasnik kazina mrtav, a na policijskoj značci je top. Pet tragova, jedna šansa, nijedna greška.“"],
+   debrief: ["In cuffs, the Architect smiles: “Well played, Detective. But every city has another Architect.” Marlow pins a new badge on you: Chief Inspector. The city sleeps a little safer tonight. THE END.", "U lisicama, Arhitekta se osmehuje: „Dobro odigrano, detektive. Ali svaki grad ima još jednog Arhitektu.“ Marlow ti zakači novu značku: Glavni inspektor. Grad večeras spava malo sigurnije. KRAJ."] }
+];
+const LG = () => (lang === "sr" ? 1 : 0);
+function storyBtn(label, fn) {
+    const b = el("storyBtn");
+    b.classList.remove("hidden"); b.dataset.en = label; b.innerText = tr(label); b.onclick = fn;
+}
+function showStory() {
+    audioInit();
+    if (profile.chapter >= STORY.length) {
+        el("storyTitle").innerText = "📖 " + (lang === "sr" ? "Priča završena" : "Story complete");
+        el("storyText").innerText = lang === "sr" ? "Srušio si Arhitektu i svi gradovi spavaju sigurnije. Priča je gotova, ali zločin nikad ne spava: slobodna igra te uvek čeka." : "You brought down the Architect and every city sleeps safer. The story is complete, but crime never sleeps: free play cases are always waiting.";
+        el("storyChoices").innerHTML = "";
+        storyBtn("▶ FREE PLAY", showUSA);
+        switchScreen("storyScreen");
+    } else if (profile.storyIntro) showHub();
+    else showApartment();
+}
+function showBriefing(i) {
+    const c = STORY[i];
+    el("storyTitle").innerText = `📖 ${lang === "sr" ? "Poglavlje" : "Chapter"} ${i + 1}/${STORY.length}: ${c.title[LG()]}`;
+    el("storyText").innerText = c.brief[LG()];
+    el("storyChoices").innerHTML = "";
+    storyBtn("▶ ACCEPT CASE", () => startNewCase(c.city, c.diff, !profile.tutorialDone && i === 0, i));
+    switchScreen("storyScreen");
+}
+function applyEffect(e) {
+    const m = e.match(/cash(\d+)/);
+    if (m) profile.cash += Number(m[1]);
+    if (e.includes("tail")) profile.nextTails = (profile.nextTails || 0) + 1;
+    if (e.includes("lead")) profile.nextLead = 1;
+}
+function showDebrief(i) {
+    const c = STORY[i], box = el("storyChoices");
+    el("storyTitle").innerText = `📖 ${lang === "sr" ? "Poglavlje" : "Chapter"} ${i + 1}: ${c.title[LG()]}`;
+    el("storyText").innerText = c.debrief[LG()];
+    box.innerHTML = "";
+    const next = () => storyBtn("▶ NEXT CHAPTER", showStory);
+    if (c.choice && !profile.choices[i]) {
+        el("storyBtn").classList.add("hidden");
+        const q = document.createElement("p");
+        q.innerText = c.choice.q[LG()];
+        box.appendChild(q);
+        c.choice.o.forEach((o, k) => {
+            const x = document.createElement("button");
+            x.className = "button menu-btn"; x.innerText = o.t[LG()];
+            x.onclick = () => { profile.choices[i] = k + 1; applyEffect(o.e); saveProfile(); box.innerHTML = ""; el("storyText").innerText += "\n\n" + o.r[LG()]; next(); };
+            box.appendChild(x);
+        });
+    } else next();
+    switchScreen("storyScreen");
+}
+
+// ================= STORY HUB (apartment + police station) =================
+let hubFrom = false, aptCalled = false;
+const LL = (en, sr) => (lang === "sr" ? sr : en);
+function hubSvg(kind) {
+    const hot = (id, inner, lx, ly, label) => `<g class="hot" onclick="hubAct('${id}')">${inner}<text x="${lx}" y="${ly}" text-anchor="middle">${label}</text></g>`;
+    let rain = "";
+    for (let i = 0; i < 40; i++) rain += `<line x1="${540 + (i * 37) % 230}" y1="${30 + (i * 53) % 170}" x2="${534 + (i * 37) % 230}" y2="${48 + (i * 53) % 170}" stroke="#9fb2cc" opacity=".35"/>`;
+    let sky = "";
+    for (let i = 0; i < 9; i++) sky += `<rect x="${545 + i * 25}" y="${110 + (i * 29) % 60}" width="20" height="${110 - (i * 29) % 60}" fill="#070a12"/>`;
+    const base = `<defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b0d14"/><stop offset="1" stop-color="#171d2c"/></linearGradient></defs><rect width="800" height="340" fill="url(#hg)"/><rect y="290" width="800" height="50" fill="#06070b"/>`;
+    if (kind === "apt") {
+        return `<svg viewBox="0 0 800 340">${base}<rect x="540" y="30" width="230" height="190" fill="#10192b" stroke="#2d3748" stroke-width="4"/>${sky}<g class="rain">${rain}</g>
+<rect x="110" y="215" width="250" height="75" fill="#1c2230"/><rect x="110" y="195" width="80" height="40" rx="6" fill="#2a3144"/><rect x="380" y="245" width="100" height="45" fill="#161920"/>
+<circle cx="500" cy="215" r="14" fill="#ffd98a" opacity=".5"/>
+${hot("call", `<rect class="ring" x="398" y="226" width="64" height="18" rx="4" fill="#00f0ff" opacity=".85"/>`, 430, 218, LL("📞 PHONE", "📞 TELEFON"))}
+${hot("adoor", `<rect x="14" y="60" width="80" height="230" fill="#1a1410" stroke="#8a6a3a" stroke-width="4"/><circle cx="80" cy="180" r="5" fill="#e8c36a"/>`, 54, 50, LL("🚪 DOOR", "🚪 VRATA"))}</svg>`;
+    }
+    const photos = [[48, 56], [108, 70], [168, 54], [60, 120], [140, 124]].map(([x, y]) => `<rect x="${x}" y="${y}" width="44" height="36" fill="#cfd2d6" opacity=".8"/>`).join("");
+    return `<svg viewBox="0 0 800 340">${base}
+${hot("board", `<rect x="30" y="30" width="230" height="170" fill="#2b2118" stroke="#6b4a2f" stroke-width="4"/>${photos}<path d="M70 74L130 88L190 72L82 138L162 142" stroke="#ff3e3e" stroke-width="2" fill="none"/>`, 145, 220, LL("🗂 BOARD", "🗂 TABLA"))}
+${hot("computer", `<rect x="300" y="140" width="160" height="105" fill="#08141a" stroke="#00f0ff" stroke-width="3"/><rect x="316" y="156" width="128" height="72" fill="#0a2a33"/><rect x="270" y="245" width="220" height="14" fill="#2a3144"/>`, 380, 270, LL("🖥 COMPUTER / SHOP", "🖥 RAČUNAR / PRODAVNICA"))}
+${hot("phone", `<rect x="500" y="236" width="44" height="16" rx="3" fill="#00f0ff" opacity=".85"/>`, 522, 228, LL("📞 PHONE", "📞 TELEFON"))}
+${hot("coffee", `<rect x="580" y="180" width="64" height="110" rx="6" fill="#3a2a22" stroke="#6b4a2f" stroke-width="3"/><circle cx="612" cy="218" r="12" fill="#ff3e3e" opacity=".6"/>`, 612, 170, LL("☕ COFFEE", "☕ KAFA"))}
+${hot("bed", `<rect x="40" y="250" width="220" height="40" fill="#1c2230"/><rect x="40" y="232" width="64" height="26" rx="5" fill="#2a3144"/>`, 150, 322, LL("🛏 BED", "🛏 KREVET"))}
+${hot("door", `<rect x="690" y="70" width="90" height="220" fill="#1a1410" stroke="#8a6a3a" stroke-width="4"/><circle cx="762" cy="190" r="5" fill="#e8c36a"/>`, 735, 60, LL("🚪 DOOR", "🚪 VRATA"))}</svg>`;
+}
+function hubSay(t) { el("hubText").innerText = t; }
+function showApartment() {
+    aptCalled = false;
+    el("hubTitle").innerText = "🌙 " + LL("Your apartment, midnight", "Tvoj stan, ponoć");
+    el("hubScene").innerHTML = hubSvg("apt");
+    hubSay(LL("The rain hasn’t stopped for hours. Then the phone rings. Click the PHONE.", "Kiša ne prestaje satima. Tada zazvoni telefon. Klikni na TELEFON."));
+    switchScreen("hubScreen");
+}
+function showHub() {
+    hubFrom = false;
+    const done = profile.chapter >= STORY.length, ci = Math.min(profile.chapter, STORY.length - 1), g = lang === "sr" ? 1 : 0;
+    el("hubTitle").innerText = `🏢 ${LL("Police station", "Policijska stanica")} · ${LL("Day", "Dan")} ${profile.day} · $${profile.cash}`;
+    el("hubScene").innerHTML = hubSvg("station");
+    hubSay(done ? LL("The story is complete. The station is yours, Chief Inspector. Free play cases are always waiting.", "Priča je gotova. Stanica je tvoja, glavni inspektore. Slobodna igra te uvek čeka.")
+        : LL(`Click the DOOR to take Chapter ${ci + 1}: ${STORY[ci].title[0]}. Prepare first: BOARD (case log), COMPUTER (buy tools), COFFEE, BED, PHONE.`, `Klikni na VRATA da preuzmeš poglavlje ${ci + 1}: ${STORY[ci].title[1]}. Prvo se pripremi: TABLA (dnevnik slučajeva), RAČUNAR (kupi alat), KAFA, KREVET, TELEFON.`));
+    switchScreen("hubScreen");
+}
+function hubAct(k) {
+    const g = lang === "sr" ? 1 : 0, done = profile.chapter >= STORY.length, ci = Math.min(profile.chapter, STORY.length - 1);
+    if (k === "call") {
+        aptCalled = true;
+        hubSay(LL("Chief Marlow: “Rookie, we have a body by the lake and a rule: I don’t send rookies alone. Get to the station. Tonight you shadow me. Move.” Click the DOOR to leave.", "Šef Marlow: „Početniče, imamo telo kraj jezera, a ja ne šaljem početnike same. Dolazi u stanicu. Večeras me pratiš. Požuri.“ Klikni na VRATA da izađeš."));
+    } else if (k === "adoor") {
+        if (!aptCalled) { hubSay(LL("The phone keeps ringing...", "Telefon i dalje zvoni...")); return; }
+        profile.storyIntro = true; saveProfile();
+        showHub();
+        hubSay(LL("Marlow waits by the board: “Welcome to the station, Rookie. Tonight you watch, learn and ask me when you are stuck. Click the DOOR when you are ready for your first case.”", "Marlow čeka kraj table: „Dobro došao u stanicu, početniče. Večeras gledaš, učiš i pitaš me kad zapneš. Klikni na VRATA kad si spreman za prvi slučaj.“"));
+    } else if (k === "door") {
+        if (done) showStory(); else showBriefing(ci);
+    } else if (k === "phone") {
+        hubSay(done ? LL("No new calls.", "Nema novih poziva.") : STORY[ci].brief[g]);
+    } else if (k === "computer") {
+        hubFrom = true; showOffice();
+    } else if (k === "board") {
+        const lines = STORY.slice(0, Math.min(profile.chapter, STORY.length)).map((c, i) => `♜ ${i + 1}. ${c.title[g]}: ${c.debrief[g]}`);
+        hubSay(lines.length ? lines.join("\n\n") : LL("The board is empty. Your first case will fill it.", "Tabla je prazna. Tvoj prvi slučaj će je popuniti."));
+    } else if (k === "coffee") {
+        if (profile.cash < 10) { hubSay(LL("You can’t afford coffee ($10).", "Ne možeš da priuštiš kafu (10$).")); return; }
+        profile.cash -= 10; profile.coffee = 1; saveProfile();
+        el("hubTitle").innerText = `🏢 ${LL("Police station", "Policijska stanica")} · ${LL("Day", "Dan")} ${profile.day} · $${profile.cash}`;
+        hubSay(LL("Strong and bitter. You can stay awake 3 hours longer in your next case.", "Jaka i gorka. U sledećem slučaju možeš da ostaneš budan 3 sata duže."));
+    } else if (k === "bed") {
+        profile.day++; saveProfile();
+        el("hubTitle").innerText = `🏢 ${LL("Police station", "Policijska stanica")} · ${LL("Day", "Dan")} ${profile.day} · $${profile.cash}`;
+        hubSay(pick([LL("You sleep eight hours. The black rook is in your dreams again.", "Spavaš osam sati. Crni top ti se opet javlja u snovima."), LL("A short sleep on the cot. Somewhere, the Architect is already planning the next move.", "Kratak san na ležaju. Negde Arhitekta već planira sledeći potez."), LL("You wake up rested. The city never sleeps, but you do.", "Budiš se odmoran. Grad nikad ne spava, ali ti spavaš.")]));
+    }
+}
+
 // ================= INIT =================
 document.body.dataset.theme = profile.theme || "";
 el("menuArt").innerHTML = scene("neon", "CASE CLOSED", 11, false);
@@ -971,3 +1320,8 @@ buildDyn();
 applyLang();
 switchScreen("menuScreen");
 translateAll(true);
+
+// Installable app (PWA): works offline once opened over https
+if (typeof navigator !== "undefined" && "serviceWorker" in navigator && /^https?:/.test(location.protocol)) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}

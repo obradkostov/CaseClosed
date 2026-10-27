@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Case Closed</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d0e12">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
 </head>
 <body>
 
@@ -26,7 +32,8 @@
             5. Arrest the killer. A wrong arrest ends the case.<br>
             Solve cases to rank up from Rookie to Chief. Higher ranks unlock harder cases.
         </div>
-        <button class="button menu-btn" onclick="showUSA()">▶ START</button>
+        <button class="button menu-btn" onclick="showStory()">📖 STORY MODE</button>
+        <button class="button menu-btn" onclick="showUSA()">▶ FREE PLAY</button>
         <button class="button menu-btn" id="tutBtn" onclick="startTutorial()">🎓 TUTORIAL (RECOMMENDED)</button>
         <button class="button menu-btn" onclick="showOffice()">🏢 OFFICE</button>
         <button class="button menu-btn" onclick="showSettings()">⚙ SETTINGS</button>
@@ -58,7 +65,22 @@
         <h2>🏢 OFFICE</h2>
         <p id="officeCash" class="hint"></p>
         <div id="officeList"></div>
-        <button class="button menu-btn" onclick="switchScreen('menuScreen')">⬅ BACK</button>
+        <button class="button menu-btn" onclick="leaveOffice()">⬅ BACK</button>
+    </div>
+
+    <div id="hubScreen" class="wide-wrap hidden">
+        <div id="hubTitle" class="storyh"></div>
+        <div id="hubScene" class="banner" style="height:340px"></div>
+        <p id="hubText"></p>
+        <button class="button" onclick="switchScreen('menuScreen')">⬅ BACK TO MENU</button>
+    </div>
+
+    <div id="storyScreen" class="menu-wrap hidden" style="max-width:640px">
+        <div id="storyTitle" class="storyh"></div>
+        <p id="storyText"></p>
+        <div id="storyChoices"></div>
+        <button class="button menu-btn" id="storyBtn"></button>
+        <button class="button menu-btn" onclick="switchScreen('menuScreen')">⬅ BACK TO MENU</button>
     </div>
 
     <div id="quitScreen" class="menu-wrap hidden">
@@ -99,6 +121,9 @@
                         <span id="currentLocationName"></span>
                         <button class="button" id="cctvBtn" onclick="checkCamera()">📹 CCTV (2h)</button>
                         <button class="button" id="searchBtn" onclick="searchScene()">🧤 Search scene (3h)</button>
+                        <button class="button hidden" id="flashBtn" onclick="useFlash()">🔦 Flashlight (1h)</button>
+                        <button class="button hidden" id="uvBtn" onclick="useUV()">🔬 UV lamp (1h)</button>
+                        <button class="button hidden" id="printBtn" onclick="collectPrints()">🧤 Collect prints (1h)</button>
                         <button class="button" id="alibiBtn" onclick="checkAlibis()">🔎 Alibis (2h)</button>
                         <button class="button" onclick="sleep()">😴 Sleep (8h)</button>
                         <button class="button" id="mapBtn" onclick="showMap()">🗺 Map</button>
@@ -110,6 +135,7 @@
                         <div>
                             <div id="dialogueName"></div>
                             <p id="dialogueText"></p>
+                            <div id="askBtns"></div>
                         </div>
                     </div>
                 </div>
@@ -118,6 +144,7 @@
             <div id="endScreen" class="hidden">
                 <h2 id="endTitle"></h2>
                 <p id="endText"></p>
+                <button class="button hidden" id="storyContBtn"></button>
                 <button class="button" onclick="showUSA()">NEW CASE</button>
                 <button class="button" onclick="switchScreen('menuScreen')">MAIN MENU</button>
             </div>
@@ -152,6 +179,8 @@
         </div>
     </div>
 </div>
+
+<div id="rotateHint">📱↻ Rotate your phone to landscape for the best experience.</div>
 
 <script src="app.js"></script>
 </body>
