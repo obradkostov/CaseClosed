@@ -242,3 +242,16 @@ body[data-theme="blood"] { --bg-color: #120506; --panel-color: #1f0b0d; --accent
 .ring { transform-box: fill-box; transform-origin: center; animation: ringing .25s infinite alternate; }
 @keyframes ringing { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
 #hubText { white-space: pre-line; text-align: left; line-height: 1.6; }
+
+/* ===== v8: walking characters, street ===== */
+#pl { pointer-events: none; }
+.npc text { font-size: 13px; }
+.walking .body { animation: bob .22s infinite alternate; }
+.walking .lg { animation: stepl .22s infinite alternate; transform-box: fill-box; transform-origin: top; }
+.walking .lg2 { animation: stepr .22s infinite alternate; transform-box: fill-box; transform-origin: top; }
+@keyframes bob { to { transform: translateY(-3px); } }
+@keyframes stepl { to { transform: rotate(18deg); } }
+@keyframes stepr { to { transform: rotate(-18deg); } }
+.sign { fill: #ff9ec0; font-size: 10px; font-family: 'Courier New', monospace; font-weight: bold; }
+.hot.glow rect:first-child { stroke: #f6c453; stroke-width: 5; }
+#mapSay { white-space: pre-line; color: #cbd5e0; min-height: 24px; }
