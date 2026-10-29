@@ -255,3 +255,26 @@ body[data-theme="blood"] { --bg-color: #120506; --panel-color: #1f0b0d; --accent
 .sign { fill: #ff9ec0; font-size: 10px; font-family: 'Courier New', monospace; font-weight: bold; }
 .hot.glow rect:first-child { stroke: #f6c453; stroke-width: 5; }
 #mapSay { white-space: pre-line; color: #cbd5e0; min-height: 24px; }
+
+/* ===== v9: detective creator ===== */
+.textin { width: 80%; padding: 10px; margin-bottom: 10px; background: #0d0e12; color: var(--text-color); border: 1px solid #4a5568; border-radius: 4px; font-family: inherit; font-size: 16px; text-align: center; }
+.swatch { width: 30px; height: 30px; margin: 3px; border: 2px solid #4a5568; border-radius: 50%; cursor: pointer; }
+.swatch.on { border-color: #fff; box-shadow: 0 0 8px #f6c453; }
+#detOptions p { text-align: left; margin: 8px 0; }
+.button.active { background-color: var(--accent-color); border-color: var(--accent-color); }
+
+/* ===== v11: calendar, calls ===== */
+#callBox, #calBox { position: fixed; inset: 0; z-index: 80; background: #000b; display: flex; align-items: center; justify-content: center; }
+.calin { background: var(--panel-color); border: 1px solid var(--accent-color); border-radius: 8px; padding: 20px; max-width: 560px; width: 90%; max-height: 85vh; overflow-y: auto; }
+.calgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.calcell { border: 1px solid #2d3748; padding: 6px 2px; border-radius: 4px; font-size: 13px; }
+.calcell.today { border-color: var(--neon-blue); background: #0a2a33; }
+#callText { white-space: pre-line; line-height: 1.6; }
+#cityText { white-space: pre-line; color: #cbd5e0; min-height: 24px; }
+
+/* ===== v12: evidence board ===== */
+#boardSvg { width: 100%; height: auto; background: #2b2118; border: 6px solid #6b4a2f; border-radius: 6px; touch-action: none; user-select: none; }
+.bcard { cursor: grab; }
+.bname { fill: #2a1a10; font-size: 11px; font-weight: bold; font-family: 'Courier New', monospace; }
+.bjob { fill: #3a2a1a; font-size: 10px; font-family: 'Courier New', monospace; }
+.bhead { fill: #5a3a10; font-size: 11px; font-weight: bold; font-family: 'Courier New', monospace; }

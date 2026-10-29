@@ -218,7 +218,7 @@ function portrait(p, met) {
 
 // ================= PROFILE, RANKS, TUTORIAL =================
 const RANKS = [["Rookie", 0], ["Officer", 2], ["Detective", 4], ["Senior Detective", 7], ["Inspector", 11], ["Chief", 16]];
-let profile = { solved: 0, tutorialDone: false, cash: 0, items: {}, theme: "", chapter: 0, choices: {}, nextTails: 0, nextLead: 0, storyIntro: false, day: 1, coffee: 0 };
+let profile = { solved: 0, tutorialDone: false, cash: 0, items: {}, theme: "", chapter: 0, choices: {}, nextTails: 0, nextLead: 0, storyIntro: false, day: 1, coffee: 0, detective: null, hour: 1, events: [], evId: 0, rep: 50 };
 const awakeLimit = () => 16 + (profile.items.thermos ? 4 : 0) + ((typeof state !== "undefined" && state.coffee) || 0);
 try { Object.assign(profile, JSON.parse(localStorage.getItem("caseClosedProfile") || "{}")); } catch (e) {}
 const saveProfile = () => { try { localStorage.setItem("caseClosedProfile", JSON.stringify(profile)); } catch (e) {} };
@@ -235,7 +235,7 @@ function startTutorial() { startNewCase("Chicago", "easy", true); }
 
 const TIPS = {
     intro: ["STEP 1/12. Welcome to your first day. Read the case story: it tells you the city, the victim and where the body was found. You have 168 hours (7 days). Now click START INVESTIGATION.", "KORAK 1/12. Dobro došao na prvi radni dan. Pročitaj priču o slučaju: kaže ti grad, žrtvu i gde je pronađeno telo. Imaš 168 sati (7 dana). Sada klikni ZAPOČNI ISTRAGU.", "#introScreen .button"],
-    map: ["STEP 2. This is the city map. Each dot is a place you can visit and the small number is the travel time in hours. The top bar shows the day and clock, the hours left (168 in total) and AWAKE: how long you have been awake. After 16 hours awake the detective collapses and must sleep 8 hours, so plan your sleep. The red ✖ is the crime scene. Click it.", "KORAK 2. Ovo je mapa grada. Svaka tačka je mesto koje možeš da posetiš, a mali broj je vreme putovanja u satima. Gornja traka pokazuje dan i sat, preostale sate (ukupno 168) i BUDAN: koliko si dugo budan. Posle 16 sati budnosti detektiv se ruši i mora da spava 8 sati, zato planiraj spavanje. Crveno ✖ je mesto zločina. Klikni na njega.", ".pin.crime"],
+    map: ["STEP 2. This is the city map. Each dot or building is a place you can visit and the small number is the travel time in hours. The top bar shows the day and clock, the hours left (168 in total) and AWAKE: how long you have been awake. After 16 hours awake the detective collapses and must sleep 8 hours, so plan your sleep. The red ✖ is the crime scene. Click it.", "KORAK 2. Ovo je mapa grada. Svaka tačka ili zgrada je mesto koje možeš da posetiš, a mali broj je vreme putovanja u satima. Gornja traka pokazuje dan i sat, preostale sate (ukupno 168) i BUDAN: koliko si dugo budan. Posle 16 sati budnosti detektiv se ruši i mora da spava 8 sati, zato planiraj spavanje. Crveno ✖ je mesto zločina. Klikni na njega.", ".pin.crime"],
     crime: ["STEP 3. You are at the crime scene. The big picture is the location. The buttons on top are your actions: each costs hours and works only once per place. People who are here stand at the bottom. First click 🧤 Search scene to look for physical evidence.", "KORAK 3. Na mestu si zločina. Velika slika je lokacija. Dugmad gore su tvoje akcije: svaka troši sate i radi samo jednom po mestu. Ljudi koji su ovde stoje dole. Prvo klikni 🧤 Pretraži mesto zločina da potražiš dokaze.", "#searchBtn"],
     search: ["STEP 4. You found evidence about the killer. Everything you learn is saved in your NOTEBOOK. Next click 📹 CCTV to review the camera.", "KORAK 4. Našao si dokaz o ubici. Sve što saznaš čuva se u tvojoj BELEŽNICI. Sledeće klikni 📹 Kamere da pregledaš snimak.", "#cctvBtn"],
     cctv: ["STEP 5. The camera showed what the killer wore: another clue. Now click a person at the bottom to question them.", "KORAK 5. Kamera je pokazala šta je ubica nosio: još jedan trag. Sada klikni na osobu dole da je ispitaš.", ".sprite"],
@@ -294,10 +294,10 @@ function typeText(t) {
 
 // ================= SCREENS =================
 function switchScreen(id) {
-    ["menuScreen","settingsScreen","quitScreen","usaScreen","officeScreen","storyScreen","hubScreen","introScreen","mapScreen","locationScreen","endScreen"].forEach(s => el(s).classList.add("hidden"));
+    ["menuScreen","settingsScreen","quitScreen","usaScreen","officeScreen","storyScreen","hubScreen","creatorScreen","cityScreen","introScreen","mapScreen","locationScreen","endScreen"].forEach(s => el(s).classList.add("hidden"));
     el(id).classList.remove("hidden");
     if (id === "menuScreen") updateMenuRank();
-    const menu = ["menuScreen","settingsScreen","quitScreen","usaScreen","officeScreen","storyScreen","hubScreen"].includes(id);
+    const menu = ["menuScreen","settingsScreen","quitScreen","usaScreen","officeScreen","storyScreen","hubScreen","creatorScreen","cityScreen"].includes(id);
     el("menuView").classList.toggle("hidden", !menu);
     el("gameView").classList.toggle("hidden", menu);
     const arrest = ["mapScreen","locationScreen"].includes(id);
@@ -333,7 +333,7 @@ function showUSA() {
 function startNewCase(city, diff, tutorial, chapter) {
     audioInit();
     const d = DIFFICULTY[diff];
-    state = { chapter: chapter == null ? null : chapter, tutorial: !!tutorial, tipsSeen: {}, done: {}, clues: {}, objectives: [], collapsed: false, tails: 2, pending: [], warned: false, roadblock: false, city, diff, time: 168, awake: 0, notes: [], currentLocation: null, unlocked: {}, known: {},
+    state = { chapter: chapter == null ? null : chapter, tutorial: !!tutorial, tipsSeen: {}, done: {}, clues: {}, board: { pos: {}, links: [], sel: null, np: 0, nc: 0 }, objectives: [], collapsed: false, tails: 2, pending: [], warned: false, roadblock: false, city, diff, time: 168, awake: 0, notes: [], currentLocation: null, unlocked: {}, known: {},
               victim: pick(VICTIMS), people: [], cctvText: "",
               locations: shuffle(CITIES[city].locs).slice(0, 6).map(([name, type, x, y]) => ({ name, type, x, y })) };
     state.crimeIdx = rnd(state.locations.length);
@@ -440,7 +440,58 @@ function travelCost(i) {
 }
 
 // ================= MAP & LOCATIONS =================
+function mapHeader(story) {
+    const h = document.querySelector("#mapScreen .panel-header");
+    if (!h) return;
+    h.dataset.en = story ? "📍 STREET: click a building to walk there" : "📍 CITY MAP: click a location to travel there";
+    h.innerText = tr(h.dataset.en);
+}
+const PED_LINES = [["Rain again. This city never dries.", "Kiša opet. Ovaj grad se nikad ne osuši."], ["I saw a black rook on a bench. Weird, huh?", "Videla sam crnog topa na klupi. Čudno, zar ne?"], ["Detectives drink too much coffee.", "Detektivi piju previše kafe."], ["Careful at night around the docks.", "Pazi se noću oko luke."], ["Someone asked me about the victim yesterday.", "Neko me juče pitao za žrtvu."], ["Got a cigarette?", "Imaš cigaretu?"], ["Cops are everywhere today.", "Policije je danas svuda."], ["Mind your own business, Detective.", "Gledaj svoja posla, detektive."]];
+function streetSvg() {
+    let b = "";
+    state.locations.forEach((l, i) => {
+        const x = 30 + i * 125, hs = hash(l.name), h = 130 + (hs % 5) * 18, top = 290 - h, crime = i === state.crimeIdx;
+        const words = l.name.split(" "), mid = Math.ceil(words.length / 2);
+        const wins = [...Array(8)].map((_, k) => `<rect class="w" style="animation-delay:${(k * 0.7).toFixed(1)}s" x="${x + 12 + (k % 4) * 24}" y="${top + 44 + Math.floor(k / 4) * 28}" width="12" height="14" fill="#e8c36a" opacity="${(hs >> k) & 1 ? 0.65 : 0.12}"/>`).join("");
+        const cost = state.currentLocation === i ? LL("you are here", "ovde si") : travelCost(i) + "h";
+        b += `<g class="hot pin${crime ? " crime" : ""}" onclick="streetGo(${i})"><rect x="${x}" y="${top}" width="110" height="${h}" fill="#0a0c13" stroke="#2d3748" stroke-width="2"/>${wins}<rect x="${x + 40}" y="262" width="30" height="28" fill="#1a1410"/>
+<text class="sign" x="${x + 55}" y="${top + 14}" text-anchor="middle">${words.slice(0, mid).join(" ")}</text><text class="sign" x="${x + 55}" y="${top + 27}" text-anchor="middle">${words.slice(mid).join(" ")}</text>
+${crime ? `<line x1="${x}" y1="282" x2="${x + 110}" y2="270" stroke="#e6c200" stroke-width="5" stroke-dasharray="12 8"/><text x="${x + 55}" y="${top - 6}" text-anchor="middle" fill="#ff3e3e" font-size="18">✖</text>` : ""}
+<text x="${x + 55}" y="326" text-anchor="middle" fill="#00f0ff">${cost}</text></g>`;
+    });
+    const peds = state.peds.map((p, k) => npcSvg("ped" + k, p.x, p.coat, "#14171f", "").replace("hubGo('ped" + k + "')", "pedGo(" + k + ")")).join("");
+    return `<svg viewBox="0 0 800 340"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#05060a"/><stop offset="1" stop-color="#1c2230"/></linearGradient></defs><rect width="800" height="340" fill="url(#sg)"/><rect y="290" width="800" height="50" fill="#0a0c12"/><rect x="0" y="240" width="800" height="100" fill="transparent" onclick="floorClick(event)"/>${b}${peds}${plSvg()}${tint()}</svg>`;
+}
+function showStreet() {
+    if (!state.peds) {
+        state.peds = [0, 1, 2].map(k => ({ x: 70 + ((k * 263 + hash(state.city)) % 650), coat: pick(["#5a3a2a", "#2a3a5a", "#4a2a4a", "#3a4a2a"]), said: false }));
+        plX = 40;
+    }
+    el("cityMap").innerHTML = streetSvg();
+    el("mapSay").innerText = "";
+    switchScreen("mapScreen");
+    tip("map");
+}
+function streetGo(i) { walkTo(30 + i * 125 + 55, () => enterLocation(i)); }
+function pedGo(k) { walkTo(state.peds[k].x - 36, () => pedSay(k)); }
+function pedSay(k) {
+    const p = state.peds[k], [en, sr] = pick(PED_LINES);
+    let t = `“${LL(en, sr)}”`;
+    if (!p.said) {
+        p.said = true;
+        const u = state.people.filter(q => !state.known[q.id]);
+        if (u.length && Math.random() < 0.3) {
+            const q = pick(u);
+            discover(q, "usually found at");
+            t += "\n" + LL(`📓 Lead: ${q.name} was mentioned. See your notebook.`, `📓 Trag: pomenuta je osoba ${q.name}. Pogledaj beležnicu.`);
+        }
+    }
+    el("mapSay").innerText = t;
+}
+
 function showMap() {
+    mapHeader(state.chapter != null);
+    if (state.chapter != null) { showStreet(); return; }
     let g = `<path d="M0 360Q300 290 520 360T1000 320" stroke="#0e2238" stroke-width="46" fill="none"/>`;
     for (let i = 1; i < 10; i++) g += `<path d="M${i * 100} 0V500M0 ${i * 50}H1000" stroke="#161d2b"/>`;
     state.locations.forEach((l, i) => {
@@ -818,7 +869,7 @@ function updateNotebook() {
 }
 
 function showTab(t) {
-    ["notes", "people", "case", "compare", "police"].forEach(x => {
+    ["notes", "people", "case", "compare", "police", "board"].forEach(x => {
         el("tab-" + x).classList.toggle("active", x === t);
         el("pane-" + x).classList.toggle("hidden", x !== t);
     });
@@ -832,6 +883,7 @@ function showTab(t) {
         } else tip(tk);
     } else if (tk) tip(tk);
     if (t === "police") updatePolice();
+    if (t === "board") renderBoard();
 }
 
 const TRAITS = [["Transport", "vehicle"], ["Clothing", "clothing"], ["Feature", "feature"], ["Habit", "habit"], ["Tie", "tie"]];
@@ -919,6 +971,15 @@ function endGame(win, msg) {
         if (state.objectives.length) { profile.cash += bonus; msg += ` Side objectives: +$${bonus}.`; }
         if (rankIndex() > before) msg += ` ⭐ PROMOTED to ${RANKS[rankIndex()][0]}! New cases unlocked.`;
     }
+    if (state.eventId) {
+        const ev = profile.events.find(x => x.id === state.eventId);
+        if (ev) {
+            ev.status = win ? "done" : "failed";
+            profile.rep = Math.max(0, Math.min(100, profile.rep + (win ? 3 : -2)));
+            if (win) { profile.cash += 150; msg += " Urgent case bonus: +$150."; }
+        }
+    }
+    if (state.chapter != null || state.eventId) { profile.day += Math.max(1, Math.ceil((168 - Math.max(0, state.time)) / 24)); profile.hour = 8; }
     saveProfile();
     switchScreen("endScreen");
     el("endTitle").innerText = win ? "🎉 CASE SOLVED!" : "💀 CASE FAILED!";
@@ -929,6 +990,8 @@ function endGame(win, msg) {
         sb.dataset.en = win ? "📖 CONTINUE STORY" : "📖 RETRY CHAPTER";
         sb.innerText = tr(sb.dataset.en);
         sb.onclick = () => (win ? showDebrief(ch) : showBriefing(ch));
+    } else if (state.eventId) {
+        sb.classList.remove("hidden"); sb.dataset.en = "🏙 BACK TO THE CITY"; sb.innerText = tr(sb.dataset.en); sb.onclick = () => showCity();
     } else sb.classList.add("hidden");
 }
 
@@ -961,7 +1024,7 @@ function showOffice() {
         + (rankIndex() >= 3 ? `<p>👤 Assistant: hired. Reports a new lead every 24 hours.</p>` : `<p>👤 Assistant: unlocks at rank Senior Detective.</p>`);
     switchScreen("officeScreen");
 }
-function leaveOffice() { if (hubFrom) { hubFrom = false; showHub(); } else switchScreen("menuScreen"); }
+function leaveOffice() { if (hubFrom) { const c = hubFrom === "city"; hubFrom = false; if (c) showCity(true); else showHub(true); } else switchScreen("menuScreen"); }
 function buy(k, c) {
     if (profile.cash < c) return toast("Not enough cash.");
     profile.cash -= c; profile.items[k] = 1; saveProfile(); showOffice();
@@ -973,12 +1036,13 @@ const I18N = {
     it: { "▶ START": "▶ GIOCA", "🎓 TUTORIAL (RECOMMENDED)": "🎓 TUTORIAL (CONSIGLIATO)", "🎓 REPLAY TUTORIAL": "🎓 RIFAI IL TUTORIAL", "🏢 OFFICE": "🏢 UFFICIO", "⚙ SETTINGS": "⚙ IMPOSTAZIONI", "✖ QUIT": "✖ ESCI", "⬅ BACK": "⬅ INDIETRO", "⬅ BACK TO MENU": "⬅ AL MENU", "SELECT A CASE": "SCEGLI UN CASO", "Volume": "Volume", "🌐 Language": "🌐 Lingua", "🎵 Music: ON": "🎵 Musica: SÌ", "🎵 Music: OFF": "🎵 Musica: NO", "🔊 Sound effects: ON": "🔊 Effetti: SÌ", "🔊 Sound effects: OFF": "🔊 Effetti: NO", "🗣 Voice: ON": "🗣 Voce: SÌ", "🗣 Voice: OFF": "🗣 Voce: NO", "📹 CCTV (2h)": "📹 Telecamere (2h)", "🔎 Alibis (2h)": "🔎 Alibi (2h)", "🧤 Search scene (3h)": "🧤 Perquisisci (3h)", "😴 Sleep (8h)": "😴 Dormi (8h)", "😴 SLEEP (8h)": "😴 DORMI (8h)", "🗺 Map": "🗺 Mappa", "📝 NOTEBOOK": "📝 TACCUINO", "✖ CLOSE": "✖ CHIUDI", "NOTES": "NOTE", "CASE": "CASO", "COMPARE": "CONFRONTA", "🚨 ARREST SUSPECT": "🚨 ARRESTA", "NEW CASE": "NUOVO CASO", "MAIN MENU": "MENU PRINCIPALE", "START INVESTIGATION": "INIZIA L'INDAGINE", "🚨 NEW CRIME REPORTED!": "🚨 NUOVO CRIMINE!", "Rank": "Grado", "Cases solved": "Casi risolti", "Cash": "Contanti" }
 };
 Object.assign(I18N.sr, { "PEOPLE": "LJUDI", "POLICE": "POLICIJA", "🏳 LEAVE CASE": "🏳 NAPUSTI SLUČAJ", "📝 DETECTIVE'S NOTEBOOK": "📝 DETEKTIVOVA BELEŽNICA", "🎨 Theme": "🎨 Tema", "BUY": "KUPI", "📍 CITY MAP: click a location to travel there": "📍 MAPA GRADA: klikni na lokaciju da otputuješ" });
-Object.assign(I18N.es, { "PEOPLE": "PERSONAS", "POLICE": "POLICÍA", "🏳 LEAVE CASE": "🏳 ABANDONAR CASO", "📝 DETECTIVE'S NOTEBOOK": "📝 LIBRETA DEL DETECTIVE", "🎨 Theme": "🎨 Tema", "BUY": "COMPRAR", "📍 CITY MAP: click a location to travel there": "📍 MAPA: haz clic en un lugar para viajar" });
-Object.assign(I18N.it, { "PEOPLE": "PERSONE", "POLICE": "POLIZIA", "🏳 LEAVE CASE": "🏳 ABBANDONA CASO", "📝 DETECTIVE'S NOTEBOOK": "📝 TACCUINO DEL DETECTIVE", "🎨 Theme": "🎨 Tema", "BUY": "COMPRA", "📍 CITY MAP: click a location to travel there": "📍 MAPPA: clicca un luogo per viaggiare" });
+Object.assign(I18N.es, { "BOARD": "TABLERO", "PEOPLE": "PERSONAS", "POLICE": "POLICÍA", "🏳 LEAVE CASE": "🏳 ABANDONAR CASO", "📝 DETECTIVE'S NOTEBOOK": "📝 LIBRETA DEL DETECTIVE", "🎨 Theme": "🎨 Tema", "BUY": "COMPRAR", "📍 CITY MAP: click a location to travel there": "📍 MAPA: haz clic en un lugar para viajar" });
+Object.assign(I18N.it, { "BOARD": "LAVAGNA", "PEOPLE": "PERSONE", "POLICE": "POLIZIA", "🏳 LEAVE CASE": "🏳 ABBANDONA CASO", "📝 DETECTIVE'S NOTEBOOK": "📝 TACCUINO DEL DETECTIVE", "🎨 Theme": "🎨 Tema", "BUY": "COMPRA", "📍 CITY MAP: click a location to travel there": "📍 MAPPA: clicca un luogo per viaggiare" });
 Object.assign(I18N.sr, { "📖 STORY MODE": "📖 PRIČA", "▶ ACCEPT CASE": "▶ PRIHVATI SLUČAJ", "▶ NEXT CHAPTER": "▶ SLEDEĆE POGLAVLJE", "📖 CONTINUE STORY": "📖 NASTAVI PRIČU", "📖 RETRY CHAPTER": "📖 PONOVI POGLAVLJE", "▶ FREE PLAY": "▶ SLOBODNA IGRA", "Story": "Priča" });
 Object.assign(I18N.es, { "📖 STORY MODE": "📖 HISTORIA", "▶ ACCEPT CASE": "▶ ACEPTAR CASO", "▶ NEXT CHAPTER": "▶ SIGUIENTE CAPÍTULO", "📖 CONTINUE STORY": "📖 CONTINUAR HISTORIA", "📖 RETRY CHAPTER": "📖 REPETIR CAPÍTULO", "▶ FREE PLAY": "▶ JUEGO LIBRE", "Story": "Historia" });
 Object.assign(I18N.it, { "📖 STORY MODE": "📖 STORIA", "▶ ACCEPT CASE": "▶ ACCETTA IL CASO", "▶ NEXT CHAPTER": "▶ CAPITOLO SUCCESSIVO", "📖 CONTINUE STORY": "📖 CONTINUA LA STORIA", "📖 RETRY CHAPTER": "📖 RIPROVA IL CAPITOLO", "▶ FREE PLAY": "▶ GIOCO LIBERO", "Story": "Storia" });
-Object.assign(I18N.sr, { "🔦 Flashlight (1h)": "🔦 Lampa (1h)", "🔬 UV lamp (1h)": "🔬 UV lampa (1h)", "🧤 Collect prints (1h)": "🧤 Uzmi otiske (1h)" });
+Object.assign(I18N.sr, { "📍 STREET: click a building to walk there": "📍 ULICA: klikni na zgradu da odeš do nje", "🔦 Flashlight (1h)": "🔦 Lampa (1h)", "🔬 UV lamp (1h)": "🔬 UV lampa (1h)", "🧤 Collect prints (1h)": "🧤 Uzmi otiske (1h)" });
+Object.assign(I18N.sr, { "BOARD": "TABLA", "🧹 Clear strings": "🧹 Obriši konce", "🔄 Re-arrange": "🔄 Preuredi", "Drag the cards. Click one card, then another, to tie a string between them. Click the same pair again to remove it.": "Prevlači kartice. Klikni jednu karticu, pa drugu da ih poveže konac. Klikni isti par ponovo da ga ukloniš.", "🏙 STREET": "🏙 ULICA", "📅 CALENDAR": "📅 KALENDAR", "🏙 BACK TO THE CITY": "🏙 NAZAD U GRAD" });
 let lang = "en";
 try { lang = localStorage.getItem("cc_lang") || "en"; } catch (e) {}
 const tr = k => (I18N[lang] && I18N[lang][k]) || k;
@@ -1105,7 +1169,7 @@ const DYN = { sr: {
  "*hands over their prints reluctantly*": "*nerado daje otiske*", "*gives their prints calmly* ": "*mirno daje otiske* ", "Take them, I have nothing to hide.": "Uzmite ih, nemam šta da krijem.", "🧤 Take fingerprints": "🧤 Uzmi otiske",
  "🔦 Flashlight": "🔦 Lampa", "Search dark corners (once per place, 1h).": "Pretraži mračne uglove (jednom po mestu, 1h).", "🔬 UV lamp": "🔬 UV lampa", "Reveals hidden traces (once per place, 1h).": "Otkriva skrivene tragove (jednom po mestu, 1h).",
  "🧤 Fingerprint kit": "🧤 Komplet za otiske", "Collect prints at the scene, then test people (1h each).": "Uzmi otiske sa mesta zločina, pa testiraj ljude (po 1h).",
- "Police officer": "Policajac", "Bartender": "Konobar", "CEO": "Direktor", "Lawyer": "Advokat", "Mechanic": "Mehaničar", "Student": "Student", "Pharmacist": "Farmaceut", "Accountant": "Računovođa", "Bouncer": "Izbacivač", "Journalist": "Novinar", "Chef": "Kuvar", "Landlord": "Stanodavac",
+ " Urgent case bonus: +$": " Bonus za hitan slučaj: +$", "Police officer": "Policajac", "Bartender": "Konobar", "CEO": "Direktor", "Lawyer": "Advokat", "Mechanic": "Mehaničar", "Student": "Student", "Pharmacist": "Farmaceut", "Accountant": "Računovođa", "Bouncer": "Izbacivač", "Journalist": "Novinar", "Chef": "Kuvar", "Landlord": "Stanodavac",
  "Nurse": "Medicinar", "Tattoo artist": "Tatu majstor", "Professor": "Profesor", "Florist": "Cvećar", "Musician": "Muzičar", "Realtor": "Agent za nekretnine", "Dealer": "Diler", "Taxi dispatcher": "Taksi dispečer",
  "Street vendor": "Ulični prodavac", "Night janitor": "Noćni domar", "Taxi driver": "Taksista", "Barista": "Barista", "Dock worker": "Lučki radnik", "Newsstand clerk": "Prodavac na kiosku", "Paramedic": "Bolničar", "Security guard": "Čuvar", "Hot dog vendor": "Prodavac viršli", "Bus driver": "Vozač autobusa", "Night nurse": "Noćna sestra"
 } };
@@ -1201,7 +1265,8 @@ function showStory() {
         el("storyChoices").innerHTML = "";
         storyBtn("▶ FREE PLAY", showUSA);
         switchScreen("storyScreen");
-    } else if (profile.storyIntro) showHub();
+    } else if (profile.storyIntro) showCity();
+    else if (!profile.detective) showCreator();
     else showApartment();
 }
 function showBriefing(i) {
@@ -1242,41 +1307,125 @@ function showDebrief(i) {
 // ================= STORY HUB (apartment + police station) =================
 let hubFrom = false, aptCalled = false;
 const LL = (en, sr) => (lang === "sr" ? sr : en);
+const PLY = 305;
+let plX = 300, walkId = 0;
+const STAND = { call: 380, adoor: 70, door: 700, board: 150, computer: 380, phone: 522, coffee: 600, bed: 150, marlow: 440, vance: 225, hphone: 380, hdoor: 70, hbed: 235 };
+const raf = f => (typeof requestAnimationFrame === "function" ? requestAnimationFrame(f) : setTimeout(() => f(Date.now()), 16));
+const figInner = (coat, hat, skin = "#c9a98a", style = "fedora") => `<g class="fig"><g class="body"><ellipse cx="0" cy="2" rx="16" ry="4" fill="#000" opacity=".4"/><rect class="lg" x="-9" y="-22" width="7" height="22" fill="#14171f"/><rect class="lg2" x="2" y="-22" width="7" height="22" fill="#14171f"/><rect x="-12" y="-64" width="24" height="46" rx="6" fill="${coat}"/><circle cx="0" cy="-74" r="10" fill="${skin}"/>${style === "fedora" ? `<rect x="-15" y="-82" width="30" height="5" fill="${hat}"/><rect x="-9" y="-93" width="18" height="12" rx="3" fill="${hat}"/>` : style === "cap" ? `<rect x="-10" y="-87" width="20" height="9" rx="4" fill="${hat}"/><rect x="2" y="-80" width="15" height="3" fill="${hat}"/>` : `<path d="M-10 -78Q0 -92 10 -78Z" fill="#2a1a10"/>`}</g></g>`;
+const plSvg = () => { const d = profile.detective || {}; return `<g id="pl" transform="translate(${plX},${PLY})">${figInner(d.coat || "#3a3f4b", d.hatc || "#1a1d26", d.skin || "#c9a98a", d.hat || "fedora")}</g>`; };
+const npcSvg = (id, x, coat, hat, label) => `<g class="hot npc" onclick="hubGo('${id}')"><g transform="translate(${x},${PLY})">${figInner(coat, hat)}</g><text x="${x}" y="${PLY - 100}" text-anchor="middle">${label}</text></g>`;
+
+function walkTo(x, cb) {
+    const pl = document.getElementById("pl");
+    if (!pl || !pl.querySelector) { if (cb) cb(); return; }
+    const id = ++walkId, dist = Math.abs(x - plX);
+    pl.classList.remove("walking");
+    if (dist < 6) { if (cb) cb(); return; }
+    const dir = x > plX ? 1 : -1;
+    pl.querySelector(".fig").setAttribute("transform", `scale(${dir},1)`);
+    pl.classList.add("walking");
+    let last = null;
+    const step = ts => {
+        if (id !== walkId) return;
+        if (last === null) last = ts;
+        const dt = Math.min(0.05, (ts - last) / 1000);
+        last = ts;
+        plX += dir * 280 * dt;
+        const arrived = dir > 0 ? plX >= x : plX <= x;
+        if (arrived) plX = x;
+        pl.setAttribute("transform", `translate(${plX},${PLY})`);
+        if (arrived) { pl.classList.remove("walking"); if (cb) cb(); return; }
+        raf(step);
+    };
+    raf(step);
+}
+function svgPoint(e) {
+    const el0 = e.currentTarget || e.target, svg = el0 && el0.ownerSVGElement;
+    if (!svg || !svg.createSVGPoint) return null;
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX; pt.y = e.clientY;
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+function floorClick(e) { const p = svgPoint(e); if (p) walkTo(Math.max(30, Math.min(770, p.x))); }
+function hubGo(k) { walkTo(STAND[k], () => hubAct(k)); }
+
 function hubSvg(kind) {
-    const hot = (id, inner, lx, ly, label) => `<g class="hot" onclick="hubAct('${id}')">${inner}<text x="${lx}" y="${ly}" text-anchor="middle">${label}</text></g>`;
+    const hot = (id, inner, lx, ly, label) => `<g class="hot" onclick="hubGo('${id}')">${inner}<text x="${lx}" y="${ly}" text-anchor="middle">${label}</text></g>`;
     let rain = "";
     for (let i = 0; i < 40; i++) rain += `<line x1="${540 + (i * 37) % 230}" y1="${30 + (i * 53) % 170}" x2="${534 + (i * 37) % 230}" y2="${48 + (i * 53) % 170}" stroke="#9fb2cc" opacity=".35"/>`;
     let sky = "";
     for (let i = 0; i < 9; i++) sky += `<rect x="${545 + i * 25}" y="${110 + (i * 29) % 60}" width="20" height="${110 - (i * 29) % 60}" fill="#070a12"/>`;
-    const base = `<defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b0d14"/><stop offset="1" stop-color="#171d2c"/></linearGradient></defs><rect width="800" height="340" fill="url(#hg)"/><rect y="290" width="800" height="50" fill="#06070b"/>`;
-    if (kind === "apt") {
+    const base = `<defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b0d14"/><stop offset="1" stop-color="#171d2c"/></linearGradient></defs><rect width="800" height="340" fill="url(#hg)"/><rect y="290" width="800" height="50" fill="#06070b"/><rect x="0" y="240" width="800" height="100" fill="transparent" onclick="floorClick(event)"/>`;
+    const home = kind === "home";
+    if (kind === "apt" || home) {
         return `<svg viewBox="0 0 800 340">${base}<rect x="540" y="30" width="230" height="190" fill="#10192b" stroke="#2d3748" stroke-width="4"/>${sky}<g class="rain">${rain}</g>
-<rect x="110" y="215" width="250" height="75" fill="#1c2230"/><rect x="110" y="195" width="80" height="40" rx="6" fill="#2a3144"/><rect x="380" y="245" width="100" height="45" fill="#161920"/>
+<rect x="110" y="215" width="250" height="75" fill="#1c2230"/><rect x="110" y="195" width="80" height="40" rx="6" fill="#2a3144"/><rect x="380" y="245" width="100" height="45" fill="#161920"/>${home ? hot("hbed", `<rect x="110" y="195" width="250" height="95" fill="#fff" opacity="0.02"/>`, 235, 185, LL("🛏 BED", "🛏 KREVET")) : ""}
 <circle cx="500" cy="215" r="14" fill="#ffd98a" opacity=".5"/>
-${hot("call", `<rect class="ring" x="398" y="226" width="64" height="18" rx="4" fill="#00f0ff" opacity=".85"/>`, 430, 218, LL("📞 PHONE", "📞 TELEFON"))}
-${hot("adoor", `<rect x="14" y="60" width="80" height="230" fill="#1a1410" stroke="#8a6a3a" stroke-width="4"/><circle cx="80" cy="180" r="5" fill="#e8c36a"/>`, 54, 50, LL("🚪 DOOR", "🚪 VRATA"))}</svg>`;
+${hot(home ? "hphone" : "call", `<rect class="ring" x="398" y="226" width="64" height="18" rx="4" fill="#00f0ff" opacity=".85"/>`, 430, 218, LL("📞 PHONE", "📞 TELEFON"))}
+${hot(home ? "hdoor" : "adoor", `<rect x="14" y="60" width="80" height="230" fill="#1a1410" stroke="#8a6a3a" stroke-width="4"/><circle cx="80" cy="180" r="5" fill="#e8c36a"/>`, 54, 50, LL("🚪 DOOR", "🚪 VRATA"))}${plSvg()}${tint()}</svg>`;
     }
     const photos = [[48, 56], [108, 70], [168, 54], [60, 120], [140, 124]].map(([x, y]) => `<rect x="${x}" y="${y}" width="44" height="36" fill="#cfd2d6" opacity=".8"/>`).join("");
     return `<svg viewBox="0 0 800 340">${base}
+<rect x="262" y="252" width="310" height="38" fill="#1b2130"/><rect x="262" y="250" width="310" height="4" fill="#2a3144"/>
 ${hot("board", `<rect x="30" y="30" width="230" height="170" fill="#2b2118" stroke="#6b4a2f" stroke-width="4"/>${photos}<path d="M70 74L130 88L190 72L82 138L162 142" stroke="#ff3e3e" stroke-width="2" fill="none"/>`, 145, 220, LL("🗂 BOARD", "🗂 TABLA"))}
-${hot("computer", `<rect x="300" y="140" width="160" height="105" fill="#08141a" stroke="#00f0ff" stroke-width="3"/><rect x="316" y="156" width="128" height="72" fill="#0a2a33"/><rect x="270" y="245" width="220" height="14" fill="#2a3144"/>`, 380, 270, LL("🖥 COMPUTER / SHOP", "🖥 RAČUNAR / PRODAVNICA"))}
-${hot("phone", `<rect x="500" y="236" width="44" height="16" rx="3" fill="#00f0ff" opacity=".85"/>`, 522, 228, LL("📞 PHONE", "📞 TELEFON"))}
+${hot("computer", `<rect x="300" y="140" width="160" height="105" fill="#08141a" stroke="#00f0ff" stroke-width="3"/><rect x="316" y="156" width="128" height="72" fill="#0a2a33"/><rect x="270" y="245" width="220" height="14" fill="#2a3144"/>`, 380, 275, LL("🖥 COMPUTER / SHOP", "🖥 RAČUNAR / PRODAVNICA"))}
+${hot("phone", `<rect x="500" y="238" width="44" height="14" rx="3" fill="#00f0ff" opacity=".85"/>`, 522, 230, LL("📞 PHONE", "📞 TELEFON"))}
 ${hot("coffee", `<rect x="580" y="180" width="64" height="110" rx="6" fill="#3a2a22" stroke="#6b4a2f" stroke-width="3"/><circle cx="612" cy="218" r="12" fill="#ff3e3e" opacity=".6"/>`, 612, 170, LL("☕ COFFEE", "☕ KAFA"))}
 ${hot("bed", `<rect x="40" y="250" width="220" height="40" fill="#1c2230"/><rect x="40" y="232" width="64" height="26" rx="5" fill="#2a3144"/>`, 150, 322, LL("🛏 BED", "🛏 KREVET"))}
-${hot("door", `<rect x="690" y="70" width="90" height="220" fill="#1a1410" stroke="#8a6a3a" stroke-width="4"/><circle cx="762" cy="190" r="5" fill="#e8c36a"/>`, 735, 60, LL("🚪 DOOR", "🚪 VRATA"))}</svg>`;
+${hot("door", `<rect x="690" y="70" width="90" height="220" fill="#1a1410" stroke="#8a6a3a" stroke-width="4"/><circle cx="762" cy="190" r="5" fill="#e8c36a"/>`, 735, 60, LL("🚪 DOOR", "🚪 VRATA"))}
+${!profile.tutorialDone || (profile.hour >= 7 && profile.hour < 22) ? npcSvg("marlow", 480, "#5a1f1f", "#2a1010", "Marlow") : ""}${profile.chapter >= 1 && profile.hour >= 9 && profile.hour < 20 ? npcSvg("vance", 225, "#1f3a5a", "#0f1a2a", "Vance") : ""}${plSvg()}${tint()}</svg>`;
 }
+const COATS = ["#3a3f4b", "#5a3a2a", "#2a3a5a", "#2f4a3a", "#5a2a3a"], HATC = ["#1a1d26", "#5a4a2a", "#7a7a7a", "#3a1a1a"], SKINS = ["#f1d3b3", "#c9a98a", "#a47a5a", "#6b4a35"], HATS = ["fedora", "cap", "none"];
+let draft = null;
+function showCreator() {
+    draft = draft || { name: "Alex Cole", coat: COATS[0], hatc: HATC[0], skin: SKINS[1], hat: "fedora" };
+    el("creatorTitle").innerText = "🕵️ " + LL("Create your detective", "Napravi svog detektiva");
+    el("detName").value = draft.name;
+    el("creatorBtn").innerText = LL("▶ CONTINUE", "▶ NASTAVI");
+    renderCreator();
+    switchScreen("creatorScreen");
+}
+function renderCreator() {
+    el("detPreview").innerHTML = `<svg viewBox="0 0 200 200"><rect width="200" height="200" fill="#0b0d14"/><g transform="translate(100,180) scale(1.7)">${figInner(draft.coat, draft.hatc, draft.skin, draft.hat)}</g></svg>`;
+    const sw = (key, arr) => arr.map(c => `<button class="swatch${draft[key] === c ? " on" : ""}" style="background:${c}" onclick="pickLook('${key}','${c}')"></button>`).join("");
+    const names = { fedora: LL("Fedora", "Šešir"), cap: LL("Cap", "Kapa"), none: LL("No hat", "Bez kape") };
+    const hats = HATS.map(h => `<button class="button${draft.hat === h ? " active" : ""}" onclick="pickLook('hat','${h}')">${names[h]}</button>`).join("");
+    el("detOptions").innerHTML = `<p>${LL("Coat", "Kaput")}: ${sw("coat", COATS)}</p><p>${LL("Hat", "Šešir")}: ${hats}</p><p>${LL("Hat color", "Boja šešira")}: ${sw("hatc", HATC)}</p><p>${LL("Skin", "Ten")}: ${sw("skin", SKINS)}</p>`;
+}
+function pickLook(k, v) { draft.name = el("detName").value || draft.name; draft[k] = v; renderCreator(); }
+function finishCreator() {
+    const name = ((el("detName").value || draft.name || "Alex Cole") + "").trim().slice(0, 14) || "Alex Cole";
+    profile.detective = { name, coat: draft.coat, hat: draft.hat, hatc: draft.hatc, skin: draft.skin };
+    saveProfile();
+    showApartment();
+}
+const hh = () => String(Math.floor(profile.hour)).padStart(2, "0") + ":" + String(Math.round((profile.hour % 1) * 60)).padStart(2, "0");
+function hubHeader() {
+    const d = profile.detective;
+    return `🏢 ${LL("Police station", "Policijska stanica")} · ${d ? d.name + " · " : ""}${dateStr()} · ${hh()} · $${profile.cash} · ⭐${profile.rep}`;
+}
+function tint() {
+    const h = profile.hour;
+    const [c, o] = h >= 8 && h < 17 ? ["#9fb4d8", 0.2] : (h >= 17 && h < 20) || (h >= 5 && h < 8) ? ["#ff9a4a", 0.14] : ["#000018", 0.3];
+    return `<rect width="800" height="340" fill="${c}" opacity="${o}" pointer-events="none"/>`;
+}
+function passTime(h) { advance(h); }
 function hubSay(t) { el("hubText").innerText = t; }
 function showApartment() {
     aptCalled = false;
+    where = "apt"; el("streetBtn").classList.add("hidden");
+    plX = 250;
     el("hubTitle").innerText = "🌙 " + LL("Your apartment, midnight", "Tvoj stan, ponoć");
     el("hubScene").innerHTML = hubSvg("apt");
     hubSay(LL("The rain hasn’t stopped for hours. Then the phone rings. Click the PHONE.", "Kiša ne prestaje satima. Tada zazvoni telefon. Klikni na TELEFON."));
     switchScreen("hubScreen");
 }
-function showHub() {
+function showHub(keep) {
     hubFrom = false;
+    where = "station"; el("streetBtn").classList.remove("hidden");
+    if (!keep) plX = 690;
     const done = profile.chapter >= STORY.length, ci = Math.min(profile.chapter, STORY.length - 1), g = lang === "sr" ? 1 : 0;
-    el("hubTitle").innerText = `🏢 ${LL("Police station", "Policijska stanica")} · ${LL("Day", "Dan")} ${profile.day} · $${profile.cash}`;
+    el("hubTitle").innerText = hubHeader();
     el("hubScene").innerHTML = hubSvg("station");
     hubSay(done ? LL("The story is complete. The station is yours, Chief Inspector. Free play cases are always waiting.", "Priča je gotova. Stanica je tvoja, glavni inspektore. Slobodna igra te uvek čeka.")
         : LL(`Click the DOOR to take Chapter ${ci + 1}: ${STORY[ci].title[0]}. Prepare first: BOARD (case log), COMPUTER (buy tools), COFFEE, BED, PHONE.`, `Klikni na VRATA da preuzmeš poglavlje ${ci + 1}: ${STORY[ci].title[1]}. Prvo se pripremi: TABLA (dnevnik slučajeva), RAČUNAR (kupi alat), KAFA, KREVET, TELEFON.`));
@@ -1289,7 +1438,7 @@ function hubAct(k) {
         hubSay(LL("Chief Marlow: “Rookie, we have a body by the lake and a rule: I don’t send rookies alone. Get to the station. Tonight you shadow me. Move.” Click the DOOR to leave.", "Šef Marlow: „Početniče, imamo telo kraj jezera, a ja ne šaljem početnike same. Dolazi u stanicu. Večeras me pratiš. Požuri.“ Klikni na VRATA da izađeš."));
     } else if (k === "adoor") {
         if (!aptCalled) { hubSay(LL("The phone keeps ringing...", "Telefon i dalje zvoni...")); return; }
-        profile.storyIntro = true; saveProfile();
+        profile.storyIntro = true; profile.hour = 1; saveProfile();
         showHub();
         hubSay(LL("Marlow waits by the board: “Welcome to the station, Rookie. Tonight you watch, learn and ask me when you are stuck. Click the DOOR when you are ready for your first case.”", "Marlow čeka kraj table: „Dobro došao u stanicu, početniče. Večeras gledaš, učiš i pitaš me kad zapneš. Klikni na VRATA kad si spreman za prvi slučaj.“"));
     } else if (k === "door") {
@@ -1297,20 +1446,291 @@ function hubAct(k) {
     } else if (k === "phone") {
         hubSay(done ? LL("No new calls.", "Nema novih poziva.") : STORY[ci].brief[g]);
     } else if (k === "computer") {
-        hubFrom = true; showOffice();
+        hubFrom = true; passTime(1); showOffice();
     } else if (k === "board") {
+        passTime(1);
         const lines = STORY.slice(0, Math.min(profile.chapter, STORY.length)).map((c, i) => `♜ ${i + 1}. ${c.title[g]}: ${c.debrief[g]}`);
         hubSay(lines.length ? lines.join("\n\n") : LL("The board is empty. Your first case will fill it.", "Tabla je prazna. Tvoj prvi slučaj će je popuniti."));
     } else if (k === "coffee") {
         if (profile.cash < 10) { hubSay(LL("You can’t afford coffee ($10).", "Ne možeš da priuštiš kafu (10$).")); return; }
-        profile.cash -= 10; profile.coffee = 1; saveProfile();
-        el("hubTitle").innerText = `🏢 ${LL("Police station", "Policijska stanica")} · ${LL("Day", "Dan")} ${profile.day} · $${profile.cash}`;
+        profile.cash -= 10; profile.coffee = 1; passTime(1);
+        el("hubTitle").innerText = hubHeader();
         hubSay(LL("Strong and bitter. You can stay awake 3 hours longer in your next case.", "Jaka i gorka. U sledećem slučaju možeš da ostaneš budan 3 sata duže."));
+    } else if (k === "marlow") {
+        hubSay("Marlow: “" + (done ? LL("Chief Inspector. The city is yours now.", "Glavni inspektore. Grad je sada tvoj.")
+            : !profile.tutorialDone ? LL("Stay close, Rookie. When you are ready, go through the DOOR. I will guide you through the first case.", "Ostani blizu, početniče. Kad si spreman, kroči kroz VRATA. Prvi slučaj vodim te za ruku.")
+            : pick([LL("Check every alibi twice. The murder happened at midnight.", "Proveri svaki alibi dvaput. Ubistvo se desilo u ponoć."), LL("A tool is only as good as the detective holding it. Visit the computer.", "Alat vredi onoliko koliko i detektiv koji ga drži. Svrati do računara."), LL("Sleep when you must, rookie. Tired detectives make wrong arrests.", "Spavaj kad moraš, početniče. Umorni detektivi pogrešno hapse."), LL("That black rook... somebody wants us to look at it.", "Taj crni top... neko želi da ga gledamo.")])) + "”");
+    } else if (k === "vance") {
+        hubSay("Vance: “" + pick([LL("Still alive, rookie? The Architect isn’t a patient man.", "Još si živ, početniče? Arhitekta nije strpljiv čovek."), LL("I read your reports. Not bad. Don’t let it go to your head.", "Čitao sam tvoje izveštaje. Nije loše. Nemoj da ti ode u glavu."), LL("Internal Affairs is watching everyone. Even Marlow.", "Unutrašnja kontrola prati sve. Čak i Marlowa.")]) + "”");
+    } else if (k === "hbed") {
+        sleepNow();
+        hubSay(pick([LL("You sleep until morning. The rain has finally stopped.", "Spavaš do jutra. Kiša je konačno prestala."), LL("A good night’s sleep. Somewhere a phone is already ringing.", "Dobar san. Negde već zvoni telefon.")]));
+    } else if (k === "hdoor") {
+        showCity();
+    } else if (k === "hphone") {
+        openCalendar();
     } else if (k === "bed") {
-        profile.day++; saveProfile();
-        el("hubTitle").innerText = `🏢 ${LL("Police station", "Policijska stanica")} · ${LL("Day", "Dan")} ${profile.day} · $${profile.cash}`;
+        sleepNow();
+        el("hubTitle").innerText = hubHeader();
+        el("hubScene").innerHTML = hubSvg("station");
         hubSay(pick([LL("You sleep eight hours. The black rook is in your dreams again.", "Spavaš osam sati. Crni top ti se opet javlja u snovima."), LL("A short sleep on the cot. Somewhere, the Architect is already planning the next move.", "Kratak san na ležaju. Negde Arhitekta već planira sledeći potez."), LL("You wake up rested. The city never sleeps, but you do.", "Budiš se odmoran. Grad nikad ne spava, ali ti spavaš.")]));
     }
+}
+
+// ================= EVIDENCE BOARD (cards + strings) =================
+function boardCards() {
+    const cards = [];
+    Object.keys(state.known).forEach(id => cards.push({ id: "p_" + id, kind: "p", p: state.people.find(x => x.id === id) }));
+    TR.forEach(t => (state.clues[t] || []).forEach((c, i) => cards.push({ id: `c_${t}_${i}`, kind: "c", t, c })));
+    return cards;
+}
+function boardPos(card) {
+    const b = state.board;
+    if (!b.pos[card.id]) {
+        if (card.kind === "p") { const i = b.np++; b.pos[card.id] = { x: 20 + (i % 3) * 125, y: 24 + Math.floor(i / 3) * 140 }; }
+        else { const j = b.nc++; b.pos[card.id] = { x: 420 + (j % 2) * 190, y: 24 + Math.floor(j / 2) * 70 }; }
+    }
+    return b.pos[card.id];
+}
+const cardSize = c => (c.kind === "p" ? [110, 122] : [170, 58]);
+function wrapText(s, n) {
+    const out = [];
+    let line = "";
+    s.split(" ").forEach(w => { if ((line + " " + w).trim().length > n) { out.push(line); line = w; } else line = (line + " " + w).trim(); });
+    if (line) out.push(line);
+    return out.slice(0, 3);
+}
+function cardSvg(c) {
+    const pos = boardPos(c), [w, h] = cardSize(c), sel = state.board.sel === c.id;
+    let inner;
+    if (c.kind === "p") {
+        const k = state.known[c.p.id];
+        const por = portrait(c.p, k.met).replace("<svg viewBox", '<svg x="5" y="5" width="100" height="84" viewBox');
+        inner = `<rect width="${w}" height="${h}" fill="#e8dcc0" stroke="${sel ? "#f6c453" : "#5a4a2a"}" stroke-width="${sel ? 4 : 2}"/>${por}<text x="55" y="104" text-anchor="middle" class="bname">${c.p.name}</text><text x="55" y="117" text-anchor="middle" class="bjob">${k.met ? c.p.job : "?"}</text>`;
+    } else {
+        const name = TRAITS.find(x => x[1] === c.t)[0], val = POOL[c.t][c.c.v].file + (c.c.unsure ? " (?)" : "");
+        inner = `<rect width="${w}" height="${h}" fill="#f6ecb8" stroke="${sel ? "#f6c453" : "#8a7a3a"}" stroke-width="${sel ? 4 : 2}"/><text x="8" y="16" class="bhead">${name}</text>${wrapText(val, 28).map((l, i) => `<text x="8" y="${31 + i * 12}" class="bjob">${l}</text>`).join("")}`;
+    }
+    return `<g class="bcard" data-id="${c.id}" transform="translate(${pos.x},${pos.y})">${inner}<circle cx="${w / 2}" cy="-2" r="5" fill="#ff3e3e"/></g>`;
+}
+function boardLines() {
+    const byId = {};
+    boardCards().forEach(c => byId[c.id] = c);
+    const as = state.tutorial ? 2 : DIFFICULTY[state.diff].assist;
+    el("boardLines").innerHTML = state.board.links.map(([a, b]) => {
+        const A = byId[a], B = byId[b];
+        if (!A || !B) return "";
+        const pa = boardPos(A), pb = boardPos(B), [wa] = cardSize(A), [wb] = cardSize(B);
+        let col = "#ff3e3e";
+        if (as >= 2 && A.kind !== B.kind) { const P = A.kind === "p" ? A : B, C = A.kind === "c" ? A : B; col = P.p.traits[C.t] === C.c.v ? "#00ff66" : "#ff3e3e"; }
+        return `<line x1="${pa.x + wa / 2}" y1="${pa.y - 2}" x2="${pb.x + wb / 2}" y2="${pb.y - 2}" stroke="${col}" stroke-width="3" opacity=".9"/>`;
+    }).join("");
+}
+function clickCard(id) {
+    const b = state.board;
+    if (b.sel === id) b.sel = null;
+    else if (!b.sel) b.sel = id;
+    else {
+        const i = b.links.findIndex(([x, y]) => (x === b.sel && y === id) || (x === id && y === b.sel));
+        if (i >= 0) b.links.splice(i, 1); else b.links.push([b.sel, id]);
+        b.sel = null;
+    }
+    renderBoard();
+}
+function clearBoard() { state.board.links = []; state.board.sel = null; renderBoard(); }
+function rearrangeBoard() { state.board.pos = {}; state.board.np = 0; state.board.nc = 0; renderBoard(); }
+function renderBoard() {
+    const svg = el("boardSvg");
+    svg.innerHTML = `<g id="boardLines"></g>` + boardCards().map(cardSvg).join("");
+    boardLines();
+    let drag = null;
+    const pt = e => { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
+    svg.onpointerdown = e => {
+        const g = e.target.closest && e.target.closest(".bcard");
+        if (!g) return;
+        const id = g.dataset.id, pos = state.board.pos[id], p = pt(e);
+        drag = { id, g, dx: p.x - pos.x, dy: p.y - pos.y, x0: p.x, y0: p.y, moved: false };
+        if (svg.setPointerCapture) svg.setPointerCapture(e.pointerId);
+    };
+    svg.onpointermove = e => {
+        if (!drag) return;
+        const p = pt(e);
+        if (Math.hypot(p.x - drag.x0, p.y - drag.y0) > 4) drag.moved = true;
+        if (!drag.moved) return;
+        const pos = state.board.pos[drag.id];
+        pos.x = Math.max(0, Math.min(640, p.x - drag.dx));
+        pos.y = Math.max(8, Math.min(450, p.y - drag.dy));
+        drag.g.setAttribute("transform", `translate(${pos.x},${pos.y})`);
+        boardLines();
+    };
+    svg.onpointerup = () => { if (!drag) return; const d = drag; drag = null; if (!d.moved) clickCard(d.id); };
+}
+
+// ================= OPEN CITY, CALENDAR, EVENTS =================
+let where = "city", lastDoor = 415, pendingCall = null;
+const CITY_B = [
+    { id: "home", x: 40, w: 120, icon: "🏠", en: "Your apartment", sr: "Tvoj stan", col: "#1b2130", h: 150 },
+    { id: "cafe", x: 190, w: 120, icon: "☕", en: "Café", sr: "Kafić", col: "#2a1f1a", h: 130 },
+    { id: "station", x: 340, w: 150, icon: "🏢", en: "Police station", sr: "Policijska stanica", col: "#18202e", h: 190 },
+    { id: "park", x: 520, w: 120, icon: "🌳", en: "Park", sr: "Park", col: "#12261a", h: 110 },
+    { id: "shop", x: 670, w: 110, icon: "🛒", en: "Supplies", sr: "Oprema", col: "#241a2a", h: 140 }
+];
+const doorX = b => b.x + b.w / 2;
+const RUMORS = [["“They say the Architect never sleeps.”", "„Kažu da Arhitekta nikad ne spava.“"], ["“Someone saw a man with a chess piece near the harbor.”", "„Neko je video čoveka sa šahovskom figurom kraj luke.“"], ["“The mayor’s office is nervous again.”", "„Gradonačelnikova kancelarija je opet nervozna.“"], ["“Marlow was seen arguing with Internal Affairs.”", "„Marlowa su videli kako se svađa sa Unutrašnjom kontrolom.“"]];
+const dateOf = day => new Date(2026, 9, 12 + day - 1);
+const wdName = d => LL(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], ["ned", "pon", "uto", "sre", "čet", "pet", "sub"])[d.getDay()];
+const monName = d => LL(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "avg", "sep", "okt", "nov", "dec"])[d.getMonth()];
+const dateStr = () => { const d = dateOf(profile.day); return `${wdName(d)} ${d.getDate()} ${monName(d)}`; };
+const absHours = () => (profile.day - 1) * 24 + profile.hour;
+function dueStr(abs) {
+    const d = dateOf(Math.floor(abs / 24) + 1), h = abs % 24;
+    return `${wdName(d)} ${d.getDate()} ${monName(d)}, ${String(Math.floor(h)).padStart(2, "0")}:${String(Math.round((h % 1) * 60)).padStart(2, "0")}`;
+}
+const evTitle = e => e.type === "urgent" ? LL(`Murder in ${e.city}`, `Ubistvo u gradu ${e.city}`) : LL("Meet Whisper at the park", "Sastanak sa Šapatom u parku");
+const cityHeader = () => `🏙 Harborview · ${profile.detective ? profile.detective.name + " · " : ""}${dateStr()} · ${hh()} · $${profile.cash} · ⭐${profile.rep}`;
+const openEventFor = id => id === "park" && profile.events.some(e => e.type === "meet" && e.status === "open");
+
+function citySvg() {
+    let b = "";
+    CITY_B.forEach(o => {
+        const top = 290 - o.h, hs = hash(o.id);
+        const win = [...Array(6)].map((_, k) => `<rect class="w" style="animation-delay:${(k * 0.8).toFixed(1)}s" x="${o.x + 12 + (k % 3) * ((o.w - 38) / 2)}" y="${top + 40 + Math.floor(k / 3) * 30}" width="14" height="16" fill="#e8c36a" opacity="${(hs >> k) & 1 ? 0.65 : 0.12}"/>`).join("");
+        b += `<g class="hot" onclick="cityGo('${o.id}')"><rect x="${o.x}" y="${top}" width="${o.w}" height="${o.h}" fill="${o.col}" stroke="#2d3748" stroke-width="2"/>${win}<rect x="${doorX(o) - 15}" y="260" width="30" height="30" fill="#1a1410"/><text x="${doorX(o)}" y="${top + 24}" text-anchor="middle" font-size="20">${o.icon}</text>${openEventFor(o.id) ? `<text x="${doorX(o)}" y="${top - 8}" text-anchor="middle" font-size="22">❗</text>` : ""}<text x="${doorX(o)}" y="318" text-anchor="middle">${LL(o.en, o.sr)}</text></g>`;
+    });
+    return `<svg viewBox="0 0 800 340"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#05060a"/><stop offset="1" stop-color="#1c2230"/></linearGradient></defs><rect width="800" height="340" fill="url(#cg)"/><rect y="290" width="800" height="50" fill="#0a0c12"/><rect x="0" y="240" width="800" height="100" fill="transparent" onclick="floorClick(event)"/>${b}${plSvg()}${tint()}</svg>`;
+}
+function cityText(t) { el("cityText").innerText = t; }
+function cityActs(list) {
+    const box = el("cityActs");
+    box.innerHTML = "";
+    list.forEach(([label, fn]) => { const b = document.createElement("button"); b.className = "button"; b.innerText = label; b.onclick = fn; box.appendChild(b); });
+}
+function showCity(keep) {
+    where = "city";
+    if (!keep) plX = lastDoor;
+    el("cityTitle").innerText = cityHeader();
+    el("cityScene").innerHTML = citySvg();
+    cityText(LL("Click a building to walk there. Time passes as you walk.", "Klikni na zgradu da odeš do nje. Vreme prolazi dok hodaš."));
+    cityActs([]);
+    switchScreen("cityScreen");
+}
+function showHome() {
+    where = "home"; plX = 250;
+    el("streetBtn").classList.remove("hidden");
+    el("hubTitle").innerText = hubHeader();
+    el("hubScene").innerHTML = hubSvg("home");
+    hubSay(LL("Home. Click the BED to sleep until morning, or the DOOR to go back to the street.", "Kući si. Klikni na KREVET da spavaš do jutra, ili na VRATA da se vratiš na ulicu."));
+    switchScreen("hubScreen");
+}
+function cityGo(id) {
+    const b = CITY_B.find(x => x.id === id), cost = Math.max(0.25, Math.round(Math.abs(doorX(b) - plX) / 800 * 4) / 4);
+    walkTo(doorX(b), () => { advance(cost); cityEnter(id); });
+}
+function cityEnter(id) {
+    const b = CITY_B.find(x => x.id === id);
+    lastDoor = doorX(b);
+    if (id === "home") showHome();
+    else if (id === "station") showHub();
+    else if (id === "shop") { hubFrom = "city"; showOffice(); }
+    else if (id === "cafe") {
+        cityText(LL("The café smells of burnt coffee and rain.", "Kafić miriše na zagorenu kafu i kišu."));
+        cityActs([
+            [LL("☕ Coffee ($10, 1h)", "☕ Kafa (10$, 1h)"), () => {
+                if (profile.cash < 10) { cityText(LL("You can’t afford coffee ($10).", "Ne možeš da priuštiš kafu (10$).")); return; }
+                profile.cash -= 10; profile.coffee = 1; advance(1);
+                cityText(LL("Strong and bitter. You can stay awake 3 hours longer in your next case.", "Jaka i gorka. U sledećem slučaju možeš da ostaneš budan 3 sata duže."));
+            }],
+            [LL("👂 Listen to rumors (1h)", "👂 Poslušaj glasine (1h)"), () => {
+                advance(1);
+                const r = pick(RUMORS), lead = Math.random() < 0.2;
+                cityText(LL(r[0], r[1]) + (lead ? "\n" + LL("A waiter slips you a note: you start your next case with a lead.", "Konobar ti gura poruku: sledeći slučaj počinješ sa tragom.") : ""));
+                if (lead) profile.nextLead = 1;
+                saveProfile();
+            }]
+        ]);
+    } else if (id === "park") {
+        cityText(LL("The park is quiet and wet.", "Park je tih i mokar."));
+        cityActs([[LL("🧍 Look for Whisper", "🧍 Potraži Šapata"), completeMeet]]);
+    }
+}
+function completeMeet() {
+    const e = profile.events.find(x => x.type === "meet" && x.status === "open");
+    if (!e) { cityText(LL("Nobody here but pigeons and a man feeding them.", "Ovde nema nikoga osim golubova i čoveka koji ih hrani.")); return; }
+    e.status = "done"; profile.cash += 120; profile.nextLead = 1; profile.rep = Math.min(100, profile.rep + 1);
+    saveProfile(); refreshScene();
+    cityText(LL("Whisper slips you an envelope: “Start your next case with a lead, Detective.” (+$120)", "Šapat ti gura kovertu: „Sledeći slučaj počni sa tragom, detektive.“ (+120$)"));
+}
+
+function refreshScene() {
+    if (where === "station" || where === "home") { el("hubTitle").innerText = hubHeader(); el("hubScene").innerHTML = hubSvg(where); }
+    else if (where === "city") { el("cityTitle").innerText = cityHeader(); el("cityScene").innerHTML = citySvg(); }
+}
+function sleepNow() { advance(profile.hour < 7 ? 7 - profile.hour : 31 - profile.hour); }
+function advance(h) {
+    profile.hour += h;
+    while (profile.hour >= 24) { profile.hour -= 24; profile.day++; }
+    const now = absHours();
+    profile.events.forEach(e => {
+        if (e.status === "open" && now > e.due) {
+            e.status = "missed";
+            profile.rep = Math.max(0, profile.rep - (e.type === "urgent" ? 3 : 1));
+            toast(LL(`⌛ Missed: ${evTitle(e)}. Your reputation drops.`, `⌛ Propušteno: ${evTitle(e)}. Tvoj ugled pada.`));
+        }
+    });
+    if (profile.storyIntro && profile.tutorialDone) {
+        for (let i = 0; i < Math.ceil(h); i++) {
+            const open = t => profile.events.some(e => e.status === "open" && e.type === t);
+            if (!open("urgent") && Math.random() < 0.1) {
+                const ok = Object.keys(DIFFICULTY).filter(d => DIFFICULTY[d].need <= rankIndex());
+                const e = { id: ++profile.evId, type: "urgent", city: pick(Object.keys(CITIES)), diff: pick(ok), due: now + 10 + rnd(8), status: "open" };
+                profile.events.push(e); pendingCall = pendingCall || e;
+            } else if (!open("meet") && Math.random() < 0.08) {
+                const e = { id: ++profile.evId, type: "meet", due: now + 8 + rnd(10), status: "open" };
+                profile.events.push(e); pendingCall = pendingCall || e;
+            }
+        }
+    }
+    if (profile.events.length > 30) profile.events = profile.events.filter(e => e.status === "open").concat(profile.events.filter(e => e.status !== "open").slice(-15));
+    saveProfile();
+    refreshScene();
+    if (pendingCall) { const e = pendingCall; pendingCall = null; showCall(e); }
+}
+function showCall(e) {
+    el("callText").innerText = e.type === "urgent"
+        ? LL(`📞 URGENT: ${evTitle(e)}.\nMarlow: “Get there fast, Detective. You have until ${dueStr(e.due)}.”`, `📞 HITNO: ${evTitle(e)}.\nMarlow: „Brzo, detektive. Imaš vremena do ${dueStr(e.due)}.“`)
+        : LL(`📞 Whisper: “Meet me at the park before ${dueStr(e.due)}. I have something for you.”`, `📞 Šapat: „Nađimo se u parku pre ${dueStr(e.due)}. Imam nešto za tebe.“`);
+    const box = el("callBtns");
+    box.innerHTML = "";
+    const add = (label, fn) => { const b = document.createElement("button"); b.className = "button"; b.innerText = label; b.onclick = () => { el("callBox").classList.add("hidden"); fn(); }; box.appendChild(b); };
+    if (e.type === "urgent") {
+        add(LL("✔ Take the case", "✔ Preuzmi slučaj"), () => takeUrgent(e));
+        add(LL("⏰ Later (calendar)", "⏰ Kasnije (kalendar)"), () => {});
+        add(LL("✖ Decline", "✖ Odbij"), () => { e.status = "declined"; profile.rep = Math.max(0, profile.rep - 1); saveProfile(); refreshScene(); });
+    } else add("OK", () => {});
+    el("callBox").classList.remove("hidden");
+    sfx("lead");
+}
+function takeUrgent(e) { e.status = "accepted"; saveProfile(); startNewCase(e.city, e.diff, false); state.eventId = e.id; }
+function takeUrgentId(id) {
+    const e = profile.events.find(x => x.id === id);
+    if (e && e.status === "open") { el("calBox").classList.add("hidden"); takeUrgent(e); }
+}
+function closeCalendar() { el("calBox").classList.add("hidden"); }
+function openCalendar() {
+    const today = profile.day, d0 = dateOf(today), back = (d0.getDay() + 6) % 7;
+    let h = `<h3>📅 ${monName(d0)} ${d0.getFullYear()}</h3><div class="calgrid">`;
+    for (let i = 0; i < 7; i++) {
+        const day = today - back + i, dd = dateOf(day), n = profile.events.filter(e => e.status === "open" && Math.floor(e.due / 24) + 1 === day).length;
+        h += `<div class="calcell${day === today ? " today" : ""}"><b>${wdName(dd)}</b><br>${dd.getDate()}${n ? `<br>❗${n}` : ""}</div>`;
+    }
+    h += "</div>";
+    const open = profile.events.filter(e => e.status === "open");
+    h += `<h4>${LL("Upcoming", "Predstoji")}</h4>` + (open.length ? open.map(e => `<p>⏰ ${dueStr(e.due)}: ${evTitle(e)} ${e.type === "urgent" ? `<button class="button" onclick="takeUrgentId(${e.id})">${LL("Take case", "Preuzmi")}</button>` : ""}</p>`).join("") : `<p class="hint">${LL("Nothing scheduled.", "Ništa nije zakazano.")}</p>`);
+    const icon = { done: "✔", missed: "⌛", declined: "✖", failed: "💀", accepted: "▶" };
+    const past = profile.events.filter(e => e.status !== "open").slice(-5).reverse();
+    if (past.length) h += `<h4>${LL("History", "Istorija")}</h4>` + past.map(e => `<p class="hint">${icon[e.status] || "•"} ${evTitle(e)}</p>`).join("");
+    el("calBody").innerHTML = h;
+    el("calBox").classList.remove("hidden");
 }
 
 // ================= INIT =================
