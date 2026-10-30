@@ -354,7 +354,7 @@ function startNewCase(city, diff, tutorial, chapter) {
     }
     if (!tutorial && profile.items.informant) { const q = pick(state.people); discover(q, "tipped by your informant, found at"); }
 
-    el("cityTitle").innerText = city;
+    el("caseCity").innerText = city;
     el("diffTag").innerText = d.label;
     el("introBanner").innerHTML = scene(crime.type, crime.name, hash(city + crime.name), true);
     el("introText").innerText = `A murder has been reported in ${city}! The body of ${state.victim} was found last night at midnight near ${crime.name}. You have exactly one week (168 hours) to search the city, check cameras, find and question people, and verify alibis. Travel and every action cost time, and you need sleep. You have no suspect list: find them yourself. Good luck, Detective.`;
