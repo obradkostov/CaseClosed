@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Case Closed</title>
-    <link rel="stylesheet" href="style.css?v=12">
+    <link rel="stylesheet" href="style.css?v=15">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0d0e12">
     <meta name="mobile-web-app-capable" content="yes">
@@ -16,10 +16,21 @@
 
 <div id="toast" class="hidden"></div>
 <div id="callBox" class="hidden"><div class="calin"><p id="callText"></p><div id="callBtns"></div></div></div>
+<div id="setBox" class="hidden"><div class="calin">
+    <h3>⚙ SETTINGS</h3>
+    <button class="button menu-btn" id="musicBtn2" onclick="toggleMusic()"></button>
+    <button class="button menu-btn" id="sfxBtn2" onclick="toggleSfx()"></button>
+    <button class="button menu-btn" id="voiceBtn2" onclick="toggleVoice()"></button>
+    <p>Volume</p>
+    <input type="range" min="0" max="100" value="50" oninput="setVol(this.value/100)">
+    <div><button class="button" onclick="setLang('en')">English</button><button class="button" onclick="setLang('sr')">Srpski / Hrvatski</button><button class="button" onclick="setLang('es')">Español</button><button class="button" onclick="setLang('it')">Italiano</button></div>
+    <button class="button menu-btn" onclick="closeSettings()">✖ CLOSE</button>
+</div></div>
 <div id="calBox" class="hidden"><div class="calin"><div id="calBody"></div><button class="button" onclick="closeCalendar()">✖ CLOSE</button></div></div>
 
 <div id="menuView">
     <div id="menuArt"></div>
+
     <div id="menuScreen" class="menu-wrap">
         <h1 class="title">CASE CLOSED</h1>
         <p class="subtitle">One murder. Seven days. One chance to arrest the right person.</p>
@@ -80,21 +91,28 @@
     </div>
 
     <div id="cityScreen" class="wide-wrap hidden">
+        <div id="cityScene" class="banner"></div>
         <div id="cityTitle" class="storyh"></div>
-        <div id="cityScene" class="banner" style="height:340px"></div>
-        <p id="cityText"></p>
-        <div id="cityActs"></div>
-        <button class="button" onclick="openCalendar()">📅 CALENDAR</button>
-        <button class="button" onclick="switchScreen('menuScreen')">⬅ BACK TO MENU</button>
+        <div class="hudb">
+            <div id="cityNav"></div>
+            <p id="cityText"></p>
+            <div id="cityActs"></div>
+            <button class="button" onclick="openCalendar()">📅 CALENDAR</button>
+            <button class="button" onclick="openSettings()">⚙ SETTINGS</button>
+            <button class="button" onclick="switchScreen('menuScreen')">⬅ BACK TO MENU</button>
+        </div>
     </div>
 
     <div id="hubScreen" class="wide-wrap hidden">
+        <div id="hubScene" class="banner"></div>
         <div id="hubTitle" class="storyh"></div>
-        <div id="hubScene" class="banner" style="height:340px"></div>
-        <p id="hubText"></p>
-        <button class="button" id="streetBtn" onclick="showCity()">🏙 STREET</button>
-        <button class="button" onclick="openCalendar()">📅 CALENDAR</button>
-        <button class="button" onclick="switchScreen('menuScreen')">⬅ BACK TO MENU</button>
+        <div class="hudb">
+            <p id="hubText"></p>
+            <button class="button" id="streetBtn" onclick="showCity()">🏙 STREET</button>
+            <button class="button" onclick="openCalendar()">📅 CALENDAR</button>
+            <button class="button" onclick="openSettings()">⚙ SETTINGS</button>
+            <button class="button" onclick="switchScreen('menuScreen')">⬅ BACK TO MENU</button>
+        </div>
     </div>
 
     <div id="storyScreen" class="menu-wrap hidden" style="max-width:640px">
@@ -115,14 +133,16 @@
 <div id="gameView" class="hidden">
     <div id="tipBox" class="hidden" onclick="this.classList.add('hidden')"></div>
     <header>
-        <div>🕵️‍♂️ CASE: <span id="cityTitle">...</span> <span id="diffTag"></span></div>
+        <div>🕵️‍♂️ CASE: <span id="caseCity">...</span> <span id="diffTag"></span></div>
         <div>😴 AWAKE: <span id="awakeHours">0</span>/<span id="awakeMax">16</span>h &nbsp;|&nbsp; 🕐 <span id="clock"></span> &nbsp;|&nbsp; ⏳ <span id="timeHours">168</span>h LEFT</div>
         <button class="button" id="nbToggle" onclick="toggleNotebook()">📝 NOTEBOOK</button>
         <button class="button" id="leaveBtn" onclick="abandonCase()">🏳 LEAVE CASE</button>
+        <button class="button" onclick="openSettings()">⚙</button>
     </header>
 
     <div class="main-container">
         <div class="game-panel">
+
             <div id="introScreen" class="hidden">
                 <h3 class="panel-header">🚨 NEW CRIME REPORTED!</h3>
                 <div id="introBanner" class="banner"></div>
@@ -212,6 +232,6 @@
 
 <div id="rotateHint">📱↻ Rotate your phone to landscape for the best experience.</div>
 
-<script src="app.js?v=12"></script>
+<script src="app.js?v=15"></script>
 </body>
 </html>

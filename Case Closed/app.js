@@ -1381,11 +1381,11 @@ function hubGo(k) { walkTo(STAND[k], () => hubAct(k)); }
 const isRain = () => hash("w" + profile.day) % 10 < 4;
 function skyScene(h, rain) {
     const day = h >= 8 && h < 17, dusk = (h >= 5 && h < 8) || (h >= 17 && h < 20);
-    const [t, b] = day ? ["#5b9bd5", "#cfe3f5"] : dusk ? ["#3a3560", "#ff9a4a"] : ["#04050c", "#141b2d"];
+    const [t, b] = rain ? (day ? ["#6b7480", "#a9b2bf"] : dusk ? ["#3a3545", "#7a6a68"] : ["#04050c", "#141b2d"]) : day ? ["#5b9bd5", "#cfe3f5"] : dusk ? ["#3a3560", "#ff9a4a"] : ["#04050c", "#141b2d"];
     let o = `<defs><linearGradient id="skg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${t}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="800" height="450" fill="url(#skg)"/>`;
-    if (day) { const sxp = 100 + (h - 8) / 9 * 600, syp = 170 - 120 * Math.sin(Math.PI * (h - 8) / 9); o += `<circle cx="${sxp}" cy="${syp}" r="56" fill="#fff3b0" opacity=".25"/><circle cx="${sxp}" cy="${syp}" r="32" fill="#fff3b0"/>`; }
-    else if (dusk) o += `<circle cx="${h < 12 ? 120 : 680}" cy="240" r="36" fill="#ffd27a"/>`;
-    else o += `<circle cx="640" cy="80" r="24" fill="#dfe6f2"/>` + [...Array(24)].map((_, i) => `<circle cx="${(i * 97) % 800}" cy="${(i * 53) % 200}" r="1.3" fill="#fff" opacity=".7"/>`).join("");
+    if (day && !rain) { const sxp = 100 + (h - 8) / 9 * 600, syp = 170 - 120 * Math.sin(Math.PI * (h - 8) / 9); o += `<circle cx="${sxp}" cy="${syp}" r="56" fill="#fff3b0" opacity=".25"/><circle cx="${sxp}" cy="${syp}" r="32" fill="#fff3b0"/>`; }
+    else if (dusk && !rain) o += `<circle cx="${h < 12 ? 120 : 680}" cy="240" r="36" fill="#ffd27a"/>`;
+    else if (!day && !dusk) o += `<circle cx="640" cy="80" r="24" fill="#dfe6f2"/>` + [...Array(24)].map((_, i) => `<circle cx="${(i * 97) % 800}" cy="${(i * 53) % 200}" r="1.3" fill="#fff" opacity=".7"/>`).join("");
     o += [[140, 80], [430, 55], [650, 105]].map(([x, y]) => `<g opacity="${day ? 0.85 : 0.14}" fill="${rain ? "#6b7380" : "#fff"}"><ellipse cx="${x}" cy="${y}" rx="64" ry="17"/><ellipse cx="${x + 30}" cy="${y - 11}" rx="40" ry="14"/></g>`).join("");
     if (rain) o += `<g class="rain">${[...Array(70)].map((_, i) => `<line x1="${(i * 61) % 800}" y1="${(i * 37) % 400}" x2="${(i * 61) % 800 - 6}" y2="${(i * 37) % 400 + 18}" stroke="#aebfd6" opacity=".4"/>`).join("")}</g>`;
     return o;
@@ -1647,23 +1647,35 @@ function renderBoard() {
 // ================= OPEN CITY, CALENDAR, EVENTS =================
 let where = "city", lastDoor = 415, pendingCall = null;
 const DISTRICTS = [
-    { id: "harbor", en: "Harbor", sr: "Luka", b: [
+    { id: "harbor", gx: 0, gy: 1, en: "Harbor", sr: "Luka", b: [
         { id: "docks", x: 60, w: 120, h: 130, icon: "⚓", en: "Docks", sr: "Dokovi", col: "#1a2a34" },
         { id: "bar", x: 260, w: 130, h: 120, icon: "🍺", en: "Rusty Anchor", sr: "Zarđalo sidro", col: "#2a1c1c" },
         { id: "pawn", x: 470, w: 120, h: 110, icon: "💍", en: "Pawn shop", sr: "Zalagaonica", col: "#262018" },
         { id: "warehouse", x: 650, w: 120, h: 150, icon: "📦", en: "Warehouse", sr: "Skladište", col: "#1c2024" }], trees: [], lamps: [200, 420, 610] },
-    { id: "down", en: "Downtown", sr: "Centar", b: [
+    { id: "down", gx: 1, gy: 1, en: "Downtown", sr: "Centar", b: [
         { id: "home", x: 30, w: 110, h: 150, icon: "🏠", en: "Your apartment", sr: "Tvoj stan", col: "#1b2130" },
         { id: "cafe", x: 180, w: 110, h: 130, icon: "☕", en: "Café", sr: "Kafić", col: "#2a1f1a" },
         { id: "station", x: 330, w: 140, h: 190, icon: "🏢", en: "Police station", sr: "Policijska stanica", col: "#18202e" },
         { id: "park", x: 520, w: 110, h: 100, icon: "🌳", en: "Park", sr: "Park", col: "#12261a" },
         { id: "shop", x: 660, w: 110, h: 140, icon: "🛒", en: "Supplies", sr: "Oprema", col: "#241a2a" }], trees: [160, 310, 495, 645], lamps: [255, 600] },
-    { id: "uptown", en: "Uptown", sr: "Gornji grad", b: [
+    { id: "uptown", gx: 1, gy: 0, en: "Uptown", sr: "Gornji grad", b: [
         { id: "library", x: 50, w: 120, h: 140, icon: "📚", en: "Library", sr: "Biblioteka", col: "#1c2230" },
         { id: "hospital", x: 230, w: 120, h: 160, icon: "🏥", en: "Hospital", sr: "Bolnica", col: "#22262e" },
         { id: "bank", x: 410, w: 130, h: 150, icon: "🏦", en: "Bank", sr: "Banka", col: "#1e2420" },
-        { id: "hotel", x: 600, w: 130, h: 180, icon: "🏨", en: "Hotel", sr: "Hotel", col: "#2a2030" }], trees: [190, 380, 570, 775], lamps: [140, 520] }
+        { id: "hotel", x: 600, w: 130, h: 180, icon: "🏨", en: "Hotel", sr: "Hotel", col: "#2a2030" }], trees: [190, 380, 570, 775], lamps: [140, 520] },
+    { id: "eastside", gx: 2, gy: 1, en: "Eastside", sr: "Istočna strana", b: [
+        { id: "church", x: 50, w: 120, h: 150, icon: "⛪", en: "Church", sr: "Crkva", col: "#22202a" },
+        { id: "club", x: 230, w: 120, h: 120, icon: "🎷", en: "Jazz club", sr: "Džez klub", col: "#2a1c28" },
+        { id: "gym", x: 410, w: 130, h: 110, icon: "🏋", en: "Gym", sr: "Teretana", col: "#1e2a2a" },
+        { id: "cemetery", x: 600, w: 130, h: 80, icon: "🪦", en: "Cemetery", sr: "Groblje", col: "#1a2020" }], trees: [150, 330, 560, 780], lamps: [200, 560] },
+    { id: "oldtown", gx: 1, gy: 2, en: "Old Town", sr: "Stari grad", b: [
+        { id: "diner", x: 40, w: 120, h: 110, icon: "🍔", en: "Diner", sr: "Restoran", col: "#2a2218" },
+        { id: "market", x: 220, w: 130, h: 100, icon: "🧺", en: "Market", sr: "Pijaca", col: "#2a2a1c" },
+        { id: "museum", x: 410, w: 140, h: 170, icon: "🏛", en: "Museum", sr: "Muzej", col: "#20242e" },
+        { id: "locksmith", x: 610, w: 120, h: 120, icon: "🗝", en: "Locksmith", sr: "Bravar", col: "#241e1e" }], trees: [190, 380, 585, 775], lamps: [160, 560] }
 ];
+const DIRS = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] };
+function neighbor(dir) { const [dx, dy] = DIRS[dir], g = DISTRICTS[district]; return DISTRICTS.findIndex(d => d.gx === g.gx + dx && d.gy === g.gy + dy); }
 const CITY_B = DISTRICTS.flatMap(d => d.b);
 let district = 1;
 const PLACES = {
@@ -1674,6 +1686,14 @@ const PLACES = {
     library: { t: ["Quiet shelves, old newspapers, one sleepy clerk.", "Tihe police, stare novine, jedan pospani službenik."], a: [["📚 Read the archives (2h)", "📚 Čitaj arhivu (2h)", "read"]] },
     hospital: { t: ["The smell of disinfectant. A doctor hurries past.", "Miris dezinfekcije. Doktor žurno prolazi."], a: [["🩺 Ask the doctor (1h)", "🩺 Pitaj doktora (1h)", "rumor"]] },
     bank: { t: ["Marble floors and cold, polite faces.", "Mermerni podovi i hladna, učtiva lica."], a: [["💳 Check your account", "💳 Proveri račun", "account"]] },
+    church: { t: ["Candles and quiet. Nobody asks you anything here.", "Sveće i tišina. Ovde te niko ništa ne pita."], a: [["🕯 Light a candle (1h)", "🕯 Zapali sveću (1h)", "pray"]] },
+    club: { t: ["The jazz is slow and the whiskey is cheap.", "Džez je spor, a viski jeftin."], a: [["🎷 Ask around (1h)", "🎷 Raspitaj se (1h)", "rumor"]] },
+    gym: { t: ["The smell of rubber and sweat.", "Miris gume i znoja."], a: [["🏋 Work out ($15, 2h)", "🏋 Treniraj (15$, 2h)", "train"]] },
+    cemetery: { t: ["Old stones and fresh flowers. A rook is carved into one of them.", "Stari spomenici i sveže cveće. Na jednom je uklesan top."], a: [["🪦 Look around (1h)", "🪦 Razgledaj (1h)", "rumor"]] },
+    diner: { t: ["Eggs, grease and gossip.", "Jaja, mast i tračevi."], a: [["🍔 Chat with the cook (1h)", "🍔 Ćaskaj sa kuvarom (1h)", "rumor"]] },
+    market: { t: ["Stalls of fruit and secondhand things.", "Tezge sa voćem i polovnim stvarima."], a: [["🧺 Sell old junk (+$30, 1h)", "🧺 Prodaj staro đubre (+30$, 1h)", "sell"]] },
+    museum: { t: ["Old city maps and a sleepy guard.", "Stare mape grada i pospani čuvar."], a: [["🏛 Study old maps (2h)", "🏛 Proučavaj stare mape (2h)", "read"]] },
+    locksmith: { t: ["Keys of every shape hang on the walls.", "Ključevi svih oblika vise na zidovima."], a: [["🗝 Ask the locksmith (1h)", "🗝 Pitaj bravara (1h)", "rumor"]] },
     hotel: { t: ["A quiet lobby. A room for the night costs $40.", "Tih hol. Soba za noć košta 40$."], a: [["🛏 Sleep until morning ($40)", "🛏 Spavaj do jutra (40$)", "rest"]] }
 };
 function rumorText(p) {
@@ -1691,6 +1711,12 @@ function placeAct(kind) {
         if (lead) { profile.nextLead = 1; saveProfile(); }
         cityText(LL("Old headlines: a black chess piece shows up at three unsolved cases.", "Stari naslovi: crna šahovska figura se pojavljuje u tri nerešena slučaja.") + (lead ? "\n" + LL("You copy a name: you start your next case with a lead.", "Prepisuješ ime: sledeći slučaj počinješ sa tragom.") : ""));
     } else if (kind === "account") cityText(LL(`Balance: $${profile.cash}. Reputation: ${profile.rep}/100.`, `Stanje: ${profile.cash}$. Ugled: ${profile.rep}/100.`));
+    else if (kind === "pray") { advance(1); profile.rep = Math.min(100, profile.rep + 1); saveProfile(); cityText(LL("You light a candle. A quiet hour. (+1 reputation)", "Pališ sveću. Miran sat. (+1 ugled)")); refreshScene(); }
+    else if (kind === "train") {
+        if (profile.cash < 15) { cityText(LL("You can’t afford the gym ($15).", "Ne možeš da priuštiš teretanu (15$).")); return; }
+        profile.cash -= 15; profile.coffee = 1; advance(2);
+        cityText(LL("A hard workout. You can stay awake 3 hours longer in your next case.", "Težak trening. U sledećem slučaju možeš da ostaneš budan 3 sata duže."));
+    }
     else if (kind === "rest") {
         if (profile.cash < 40) { cityText(LL("You can’t afford a room ($40).", "Ne možeš da priuštiš sobu (40$).")); return; }
         profile.cash -= 40; sleepNow();
@@ -1722,8 +1748,9 @@ function citySvg() {
         b += `<g class="hot" onclick="cityGo('${o.id}')"><rect class="bld" x="${o.x}" y="${top}" width="${o.w}" height="${o.h}" fill="${o.col}" stroke="#2d3748" stroke-width="2"/>${win}<rect x="${doorX(o) - 15}" y="370" width="30" height="30" fill="#1a1410"/><text x="${doorX(o)}" y="${top + 24}" text-anchor="middle" font-size="20">${o.icon}</text>${openEventFor(o.id) ? `<text x="${doorX(o)}" y="${top - 8}" text-anchor="middle" font-size="22">❗</text>` : ""}<text x="${doorX(o)}" y="422" text-anchor="middle">${LL(o.en, o.sr)}</text></g>`;
     });
     const far = [...Array(14)].map((_, i) => `<rect x="${i * 60}" y="${250 + (i * 41) % 60}" width="52" height="200" fill="${day ? "#7c8aa6" : "#0a0e18"}" opacity=".7"/>`).join("");
-    const prev = district > 0 ? `<g class="hot" onclick="cityGo('prev')"><rect x="2" y="340" width="30" height="58" rx="4" fill="#223" stroke="#556" stroke-width="2"/><text x="17" y="377" text-anchor="middle" font-size="22" fill="#e2e8f0">◀</text><text x="4" y="436" text-anchor="start">${LL(DISTRICTS[district - 1].en, DISTRICTS[district - 1].sr)}</text></g>` : "";
-    const next = district < DISTRICTS.length - 1 ? `<g class="hot" onclick="cityGo('next')"><rect x="768" y="340" width="30" height="58" rx="4" fill="#223" stroke="#556" stroke-width="2"/><text x="783" y="377" text-anchor="middle" font-size="22" fill="#e2e8f0">▶</text><text x="796" y="436" text-anchor="end">${LL(DISTRICTS[district + 1].en, DISTRICTS[district + 1].sr)}</text></g>` : "";
+    const arrow = (dir, x, glyph) => { const n = neighbor(dir); return n < 0 ? "" : `<g class="hot" onclick="cityGo('${dir}')"><rect x="${x}" y="338" width="30" height="58" rx="4" fill="#223" stroke="#556" stroke-width="2"/><text x="${x + 15}" y="375" text-anchor="middle" fill="#e2e8f0">${glyph}</text><rect x="${dir === "left" ? 2 : 700}" y="316" width="98" height="19" rx="3" fill="#000b"/><text x="${dir === "left" ? 51 : 749}" y="330" text-anchor="middle" fill="#00f0ff">${LL(DISTRICTS[n].en, DISTRICTS[n].sr)}</text></g>`; };
+    const prev = arrow("left", 2, "◀");
+    const next = arrow("right", 768, "▶");
     return `<svg class="${day ? "day" : ""}" viewBox="0 0 800 450">${skyScene(hr, isRain())}${far}<rect y="400" width="800" height="50" fill="${day ? "#5a6070" : "#0a0c12"}"/>${D.trees.map(x => treeSvg(x, 0.55, night)).join("")}${b}${D.lamps.map(x => lampSvg(x, night)).join("")}${prev}${next}<rect x="0" y="350" width="800" height="100" fill="transparent" onclick="floorClick(event)"/>${plSvg()}</svg>`;
 }
 function cityText(t) { el("cityText").innerText = t; }
@@ -1737,8 +1764,18 @@ function showCity(keep) {
     if (!keep) plX = lastDoor;
     el("cityTitle").innerText = cityHeader();
     el("cityScene").innerHTML = citySvg();
-    cityText(LL("Click a building to walk there. Arrows at the edges lead to other districts.", "Klikni na zgradu da odeš do nje. Strelice na ivicama vode u druge delove grada."));
+    cityText(LL("Click a building to walk there. Use the arrows to go to other streets.", "Klikni na zgradu da odeš do nje. Strelice vode u druge ulice."));
     cityActs([]);
+    const nav = el("cityNav");
+    nav.innerHTML = "";
+    [["left", "⬅"], ["right", "➡"], ["up", "⬆"], ["down", "⬇"]].forEach(([dir, ar]) => {
+        const n = neighbor(dir);
+        if (n < 0) return;
+        const b = document.createElement("button");
+        b.className = "button"; b.innerText = `${ar} ${LL(DISTRICTS[n].en, DISTRICTS[n].sr)}`;
+        b.onclick = () => cityGo(dir);
+        nav.appendChild(b);
+    });
     switchScreen("cityScreen");
 }
 function showScene(kind, en, sr) {
@@ -1760,10 +1797,11 @@ function showHome() {
     switchScreen("hubScreen");
 }
 function cityGo(id) {
-    if (id === "prev" || id === "next") {
-        const dir = id === "next" ? 1 : -1;
-        if (district + dir < 0 || district + dir >= DISTRICTS.length) return;
-        walkTo(dir > 0 ? 770 : 30, () => { advance(0.5); district += dir; plX = dir > 0 ? 40 : 760; showCity(true); });
+    const dir = id === "prev" ? "left" : id === "next" ? "right" : id;
+    if (DIRS[dir]) {
+        const n = neighbor(dir);
+        if (n < 0) return;
+        walkTo(dir === "right" ? 770 : dir === "left" ? 30 : 400, () => { advance(0.5); district = n; plX = dir === "right" ? 40 : dir === "left" ? 760 : 400; showCity(true); });
         return;
     }
     const di = DISTRICTS.findIndex(d => d.b.some(x => x.id === id));
