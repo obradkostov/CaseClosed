@@ -332,13 +332,14 @@ function showUSA() {
 // ================= CASE GENERATION =================
 function startNewCase(city, diff, tutorial, chapter) {
     audioInit();
-    const d = DIFFICULTY[diff];
+    const d = { ...DIFFICULTY[diff], ...((chapter != null && STORY[chapter] && STORY[chapter].mod) || {}) };
     state = { chapter: chapter == null ? null : chapter, tutorial: !!tutorial, tipsSeen: {}, done: {}, clues: {}, board: { pos: {}, links: [], sel: null, np: 0, nc: 0 }, objectives: [], collapsed: false, tails: 2, pending: [], warned: false, roadblock: false, city, diff, time: 168, awake: 0, notes: [], currentLocation: null, unlocked: {}, known: {},
               victim: pick(VICTIMS), people: [], cctvText: "",
               locations: shuffle(CITIES[city].locs).slice(0, 6).map(([name, type, x, y]) => ({ name, type, x, y })) };
     state.crimeIdx = rnd(state.locations.length);
     const crime = state.locations[state.crimeIdx];
     state.notes = [`Case opened: ${state.victim} was found dead near ${crime.name} at midnight.`];
+    state.d = d;
     buildPeople(d);
     if (!tutorial) state.objectives = shuffle(OBJECTIVES).slice(0, 2);
     state.coffee = profile.coffee ? 3 : 0; profile.coffee = 0;
@@ -349,7 +350,7 @@ function startNewCase(city, diff, tutorial, chapter) {
     }
     if (chapter != null) {
         addNote("♜ A black chess rook was left next to the body.");
-        if (chapter === STORY.length - 1) { state.killer.name = "Silas Crane"; state.killer.job = "Shipping magnate"; }
+        if (STORY[chapter].boss) { state.killer.name = STORY[chapter].boss[0]; state.killer.job = STORY[chapter].boss[1]; }
     }
     if (!tutorial && profile.items.informant) { const q = pick(state.people); discover(q, "tipped by your informant, found at"); }
 
@@ -454,13 +455,14 @@ function streetSvg() {
         const words = l.name.split(" "), mid = Math.ceil(words.length / 2);
         const wins = [...Array(8)].map((_, k) => `<rect class="w" style="animation-delay:${(k * 0.7).toFixed(1)}s" x="${x + 12 + (k % 4) * 24}" y="${top + 44 + Math.floor(k / 4) * 28}" width="12" height="14" fill="#e8c36a" opacity="${(hs >> k) & 1 ? 0.65 : 0.12}"/>`).join("");
         const cost = state.currentLocation === i ? LL("you are here", "ovde si") : travelCost(i) + "h";
-        b += `<g class="hot pin${crime ? " crime" : ""}" onclick="streetGo(${i})"><rect x="${x}" y="${top}" width="110" height="${h}" fill="#0a0c13" stroke="#2d3748" stroke-width="2"/>${wins}<rect x="${x + 40}" y="262" width="30" height="28" fill="#1a1410"/>
+        b += `<g class="hot pin${crime ? " crime" : ""}" onclick="streetGo(${i})"><rect class="bld" x="${x}" y="${top}" width="110" height="${h}" fill="#0a0c13" stroke="#2d3748" stroke-width="2"/>${wins}<rect x="${x + 40}" y="262" width="30" height="28" fill="#1a1410"/>
 <text class="sign" x="${x + 55}" y="${top + 14}" text-anchor="middle">${words.slice(0, mid).join(" ")}</text><text class="sign" x="${x + 55}" y="${top + 27}" text-anchor="middle">${words.slice(mid).join(" ")}</text>
 ${crime ? `<line x1="${x}" y1="282" x2="${x + 110}" y2="270" stroke="#e6c200" stroke-width="5" stroke-dasharray="12 8"/><text x="${x + 55}" y="${top - 6}" text-anchor="middle" fill="#ff3e3e" font-size="18">✖</text>` : ""}
 <text x="${x + 55}" y="326" text-anchor="middle" fill="#00f0ff">${cost}</text></g>`;
     });
     const peds = state.peds.map((p, k) => npcSvg("ped" + k, p.x, p.coat, "#14171f", "").replace("hubGo('ped" + k + "')", "pedGo(" + k + ")")).join("");
-    return `<svg viewBox="0 0 800 340"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#05060a"/><stop offset="1" stop-color="#1c2230"/></linearGradient></defs><rect width="800" height="340" fill="url(#sg)"/><rect y="290" width="800" height="50" fill="#0a0c12"/><rect x="0" y="240" width="800" height="100" fill="transparent" onclick="floorClick(event)"/>${b}${peds}${plSvg()}${tint()}</svg>`;
+    const dayS = profile.hour >= 8 && profile.hour < 17;
+    return `<svg class="${dayS ? "day" : ""}" viewBox="0 0 800 450">${skyScene(profile.hour, isRain())}<rect y="400" width="800" height="50" fill="${dayS ? "#5a6070" : "#0a0c12"}"/><g transform="translate(0,110)">${b}</g><rect x="0" y="350" width="800" height="100" fill="transparent" onclick="floorClick(event)"/>${peds}${plSvg()}</svg>`;
 }
 function showStreet() {
     if (!state.peds) {
@@ -563,8 +565,8 @@ function checkCamera() {
     let r;
     if (state.currentLocation === state.crimeIdx) {
         r = state.cctvText;
-        if (DIFFICULTY[state.diff].cctv) addClue("clothing", state.kt.clothing, "CCTV", false);
-        addNote(DIFFICULTY[state.diff].cctv ? `CCTV at the crime scene: figure ${CLOTHES[state.kt.clothing].seen}.` : "CCTV at the crime scene was knocked out.");
+        if ((state.d || DIFFICULTY[state.diff]).cctv) addClue("clothing", state.kt.clothing, "CCTV", false);
+        addNote((state.d || DIFFICULTY[state.diff]).cctv ? `CCTV at the crime scene: figure ${CLOTHES[state.kt.clothing].seen}.` : "CCTV at the crime scene was knocked out.");
     } else r = "[CCTV FOOTAGE] Nothing suspicious around midnight at this location.";
     el("reportBox").innerText = r;
 }
@@ -801,7 +803,7 @@ function talkTo(p) {
         return;
     }
     if (!spend(1)) return;
-    const d = DIFFICULTY[state.diff];
+    const d = (state.d || DIFFICULTY[state.diff]);
     if (!state.known[p.id]) state.known[p.id] = { met: true, claim: "" };
     const first = !state.known[p.id].met;
     state.known[p.id].met = true;
@@ -914,7 +916,7 @@ function updatePeople() {
 }
 
 function updateCompare() {
-    const as = state.tutorial ? 2 : DIFFICULTY[state.diff].assist;
+    const as = state.tutorial ? 2 : (state.d || DIFFICULTY[state.diff]).assist;
     const ids = Object.keys(state.known).filter(id => state.known[id].met);
     let h = `<table class="cmp"><tr><th>Person</th>${TRAITS.map(t => `<th>${t[0]}</th>`).join("")}<th>Alibi</th>${as >= 2 ? "<th>Matches</th>" : ""}</tr>`;
     h += `<tr class="cluerow"><td>CLUES</td>${TRAITS.map(([n, t]) => `<td>${(state.clues[t] || []).map(c => POOL[t][c.v].file + (c.unsure ? " (?)" : "")).join("<br>") || "?"}</td>`).join("")}<td></td>${as >= 2 ? "<td></td>" : ""}</tr>`;
@@ -965,7 +967,7 @@ function endGame(win, msg) {
         const before = rankIndex();
         profile.solved++;
         if (state.chapter != null) profile.chapter = Math.max(profile.chapter, state.chapter + 1);
-        const reward = 100 + Math.max(0, state.time) * 2 + DIFFICULTY[state.diff].need * 100 + (state.chapter != null ? 150 : 0);
+        const reward = 100 + Math.max(0, state.time) * 2 + (state.d || DIFFICULTY[state.diff]).need * 100 + (state.chapter != null ? 150 : 0);
         profile.cash += reward; msg += ` Reward: $${reward}.`;
         const bonus = state.objectives.filter(o => o.ok(state)).reduce((a, o) => a + o.bonus, 0);
         if (state.objectives.length) { profile.cash += bonus; msg += ` Side objectives: +$${bonus}.`; }
@@ -1169,7 +1171,7 @@ const DYN = { sr: {
  "*hands over their prints reluctantly*": "*nerado daje otiske*", "*gives their prints calmly* ": "*mirno daje otiske* ", "Take them, I have nothing to hide.": "Uzmite ih, nemam šta da krijem.", "🧤 Take fingerprints": "🧤 Uzmi otiske",
  "🔦 Flashlight": "🔦 Lampa", "Search dark corners (once per place, 1h).": "Pretraži mračne uglove (jednom po mestu, 1h).", "🔬 UV lamp": "🔬 UV lampa", "Reveals hidden traces (once per place, 1h).": "Otkriva skrivene tragove (jednom po mestu, 1h).",
  "🧤 Fingerprint kit": "🧤 Komplet za otiske", "Collect prints at the scene, then test people (1h each).": "Uzmi otiske sa mesta zločina, pa testiraj ljude (po 1h).",
- " Urgent case bonus: +$": " Bonus za hitan slučaj: +$", "Police officer": "Policajac", "Bartender": "Konobar", "CEO": "Direktor", "Lawyer": "Advokat", "Mechanic": "Mehaničar", "Student": "Student", "Pharmacist": "Farmaceut", "Accountant": "Računovođa", "Bouncer": "Izbacivač", "Journalist": "Novinar", "Chef": "Kuvar", "Landlord": "Stanodavac",
+ " Urgent case bonus: +$": " Bonus za hitan slučaj: +$", "Gallery owner": "Vlasnica galerije", "Police officer": "Policajac", "Bartender": "Konobar", "CEO": "Direktor", "Lawyer": "Advokat", "Mechanic": "Mehaničar", "Student": "Student", "Pharmacist": "Farmaceut", "Accountant": "Računovođa", "Bouncer": "Izbacivač", "Journalist": "Novinar", "Chef": "Kuvar", "Landlord": "Stanodavac",
  "Nurse": "Medicinar", "Tattoo artist": "Tatu majstor", "Professor": "Profesor", "Florist": "Cvećar", "Musician": "Muzičar", "Realtor": "Agent za nekretnine", "Dealer": "Diler", "Taxi dispatcher": "Taksi dispečer",
  "Street vendor": "Ulični prodavac", "Night janitor": "Noćni domar", "Taxi driver": "Taksista", "Barista": "Barista", "Dock worker": "Lučki radnik", "Newsstand clerk": "Prodavac na kiosku", "Paramedic": "Bolničar", "Security guard": "Čuvar", "Hot dog vendor": "Prodavac viršli", "Bus driver": "Vozač autobusa", "Night nurse": "Noćna sestra"
 } };
@@ -1221,36 +1223,63 @@ const STORY = [
  { city: "Chicago", diff: "easy", title: ["The Black Rook", "Crni top"],
    brief: ["Chief Marlow: “A body by the lake, and someone left a black chess rook beside it. Could be nothing, Rookie. Treat it like any case, but keep that rook in your notes.”", "Šef Marlow: „Telo pored jezera, a neko je pored njega ostavio crnog šahovskog topa. Možda ništa ne znači, početniče. Radi kao na svakom slučaju, ali zapamti tog topa.“"],
    debrief: ["The killer talks before the cuffs click: someone called the Architect paid for the job. Marlow frowns: “Keep this between us.”", "Ubica progovori pre nego što mu stave lisice: za posao ga je platio neko ko se zove Arhitekta. Marlow se mršti: „Neka ostane među nama.“"] },
- { city: "New York", diff: "easy", title: ["Second Rook", "Drugi top"],
+ { city: "New York", diff: "normal", mod: { suspects: 6 }, title: ["Second Rook", "Drugi top"],
    brief: ["Chief Marlow: “Another murder, another black rook. Detective Vance from Internal Affairs is on it too, and he hates rookies stealing his collar. Beat him to it.”", "Šef Marlow: „Još jedno ubistvo, još jedan crni top. Detektiv Vance iz Unutrašnje kontrole je takođe na slučaju i mrzi početnike koji mu otimaju uhapšenika. Preteci ga.“"],
    debrief: ["Vance arrives too late and glares at you. In the killer’s pocket: a ferry ticket stub from Miami.", "Vance stiže prekasno i mrko te gleda. U džepu ubice: ostatak karte za trajekt iz Majamija."],
    choice: { q: ["Vance offers his file on the Architect in return for a favor. What do you do?", "Vance nudi svoj dosije o Arhitekti za uzvrat uslugu. Šta radiš?"], o: [
      { t: ["Accept the file (+1 police tail in the next case)", "Prihvati dosije (+1 praćenje policije u sledećem slučaju)"], e: "tail", r: ["Vance’s file helps: the police owe you one.", "Vanceov dosije pomaže: policija ti je dužna uslugu."] },
      { t: ["Decline, stay independent (+$200)", "Odbij i ostani nezavisan (+200$)"], e: "cash200", r: ["Vance shrugs. You keep your independence and a bit of cash.", "Vance sleže ramenima. Ostaješ nezavisan i nešto bogatiji."] }] } },
- { city: "Miami", diff: "normal", title: ["Dead Man’s Ticket", "Karta mrtvaca"],
+ { city: "Miami", diff: "normal", mod: { suspects: 7 }, title: ["Dead Man’s Ticket", "Karta mrtvaca"],
    brief: ["Chief Marlow: “The ferry stub points to Miami: a club owner is dead, with a black rook in his glass. Everyone here has something to hide, so check every alibi.”", "Šef Marlow: „Karta za trajekt vodi u Majami: vlasnik kluba je mrtav, a u njegovoj čaši je crni top. Svako ovde nešto krije, zato proveri svaki alibi.“"],
    debrief: ["A dying confession names the Architect’s bank: a shell company in New Orleans. Marlow tells you to pack quietly.", "Ubica pred kraj priznaje: Arhitektina banka je fiktivna firma u Nju Orleansu. Marlow ti kaže da tiho spakuješ stvari."] },
- { city: "Boston", diff: "normal", title: ["The Professor", "Profesor"],
+ { city: "Boston", diff: "normal", mod: { suspects: 7 }, title: ["The Professor", "Profesor"],
    brief: ["Chief Marlow: “A retired professor lies dead in the library. He once taught three names on my list. Coincidence? I don’t believe in those.”", "Šef Marlow: „Penzionisani profesor leži mrtav u biblioteci. Nekad je predavao trojici sa moje liste. Slučajnost? Ja ne verujem u to.“"],
    debrief: ["His notes show a pattern: every victim knew the same secret about the harbor. Someone is silencing witnesses.", "Njegove beleške pokazuju obrazac: svaka žrtva je znala istu tajnu o luci. Neko ućutkuje svedoke."],
    choice: { q: ["Whisper, a street informant, offers to dig for you. Do you trust him?", "Šapat, ulični doušnik, nudi da kopa za tebe. Veruješ li mu?"], o: [
      { t: ["Trust Whisper (start the next case with a known lead)", "Veruj Šapatu (sledeći slučaj počinješ sa poznatim tragom)"], e: "lead", r: ["Whisper grins and vanishes into the crowd. He will have something for you.", "Šapat se ceri i nestaje u gomili. Imaće nešto za tebe."] },
      { t: ["Don’t trust him (+$150)", "Ne veruj mu (+150$)"], e: "cash150", r: ["You pass on Whisper. Safer, maybe, and richer.", "Odbijaš Šapata. Možda sigurnije, a sigurno bogatije."] }] } },
- { city: "New Orleans", diff: "normal", title: ["Voodoo and Debts", "Vudu i dugovi"],
+ { city: "New Orleans", diff: "normal", mod: { suspects: 8, decoys: 2 }, title: ["Voodoo and Debts", "Vudu i dugovi"],
    brief: ["Chief Marlow: “The shell company’s trail ends at a riverboat casino. A bartender is dead and a rook sits in a bowl of gumbo. Someone inside the department is leaking, so trust nobody.”", "Šef Marlow: „Trag fiktivne firme završava na kockarskom brodu. Konobar je mrtav, a u činiji gumba je top. Neko iz policije odaje informacije, zato ne veruj nikome.“"],
    debrief: ["The leak is confirmed: the killer knew the police schedule. From now on, your notebook is the only thing you trust.", "Curenje je potvrđeno: ubica je znao raspored policije. Od sada veruješ samo svojoj beležnici."] },
- { city: "Seattle", diff: "hard", title: ["Rain Check", "Kiša i sumnje"],
+ { city: "Seattle", diff: "hard", mod: { suspects: 9 }, title: ["Rain Check", "Kiša i sumnje"],
    brief: ["Detective Vance: “Seattle. Heavy rain, heavier case. Witnesses are nervous and the cameras are junk. Be careful, rookie. The Architect knows your name.”", "Detektiv Vance: „Sijetl. Jaka kiša, još teži slučaj. Svedoci su nervozni, a kamere beskorisne. Čuvaj se, početniče. Arhitekta zna tvoje ime.“"],
    debrief: ["A note under your door: “You are close. Stop.” You sleep with the light on.", "Poruka ispod vrata: „Blizu si. Odustani.“ Spavaš sa upaljenim svetlom."],
    choice: { q: ["Marlow suggests going public. The press could help, or warn the Architect.", "Marlow predlaže da se izađe u javnost. Štampa može da pomogne ili da upozori Arhitektu."], o: [
      { t: ["Go public (+$250)", "Izađi u javnost (+250$)"], e: "cash250", r: ["Headlines everywhere. Donations pour in, and so do threats.", "Naslovi svuda. Stižu donacije, a i pretnje."] },
      { t: ["Stay quiet (+1 police tail and a known lead next case)", "Ćuti (+1 praćenje policije i poznat trag u sledećem slučaju)"], e: "tail+lead", r: ["Silence pays off: your sources stay loyal.", "Tišina se isplati: tvoji izvori ostaju odani."] }] } },
- { city: "Los Angeles", diff: "hard", title: ["Hollywood Noir", "Holivudski noar"],
+ { city: "Los Angeles", diff: "hard", mod: { suspects: 9, decoys: 3 }, title: ["Hollywood Noir", "Holivudski noar"],
    brief: ["Chief Marlow: “A producer dead on a studio lot, a rook in the prop department. The Architect is toying with you now. Every suspect has a perfect story. Find the one that cracks.”", "Šef Marlow: „Producent mrtav na filmskom setu, top u rekviziti. Arhitekta se sada igra sa tobom. Svaki osumnjičeni ima savršenu priču. Nađi onu koja puca.“"],
    debrief: ["Vance finally helps: the Architect’s list of targets ends with two names, Marlow’s and yours.", "Vance konačno pomaže: Arhitektina lista meta se završava sa dva imena: Marlowovim i tvojim."] },
- { city: "Las Vegas", diff: "expert", title: ["The Architect", "Arhitekta"],
+ { city: "Las Vegas", diff: "expert", mod: { suspects: 11 }, boss: ["Silas Crane", "Shipping magnate"], title: ["The Architect", "Arhitekta"],
    brief: ["Chief Marlow: “Las Vegas. The Architect’s final game: a casino owner dead and a rook placed on a police badge. Five clues, one chance, no mistakes.”", "Šef Marlow: „Las Vegas. Arhitektina poslednja partija: vlasnik kazina mrtav, a na policijskoj značci je top. Pet tragova, jedna šansa, nijedna greška.“"],
-   debrief: ["In cuffs, the Architect smiles: “Well played, Detective. But every city has another Architect.” Marlow pins a new badge on you: Chief Inspector. The city sleeps a little safer tonight. THE END.", "U lisicama, Arhitekta se osmehuje: „Dobro odigrano, detektive. Ali svaki grad ima još jednog Arhitektu.“ Marlow ti zakači novu značku: Glavni inspektor. Grad večeras spava malo sigurnije. KRAJ."] }
+   debrief: ["In cuffs, the Architect smiles: “Well played, Detective. But every city has another Architect.” Marlow pins a new badge on you. The next morning, a package waits on your desk: a black rook.", "U lisicama, Arhitekta se osmehuje: „Dobro odigrano, detektive. Ali svaki grad ima još jednog Arhitektu.“ Marlow ti zakači novu značku. Sledećeg jutra na stolu te čeka paket: crni top."] },
+ { city: "Chicago", diff: "hard", mod: { suspects: 9 }, title: ["Second Opening", "Druga partija"],
+   brief: ["Chief Marlow: “A package on your desk this morning: a black rook and a note: ‘Your move.’ At the same hour, a judge is dead in Chicago. The Architect is in prison, so who is playing?”", "Šef Marlow: „Jutros na tvom stolu paket: crni top i poruka: ‘Tvoj potez.’ U isto vreme, sudija je mrtav u Čikagu. Arhitekta je u zatvoru, pa ko igra?“"],
+   debrief: ["The judge’s killer was hired through a broker who only ever says one word: “Queen.” Someone is rebuilding the Architect’s network.", "Sudijinog ubicu je unajmio posrednik koji izgovara samo jednu reč: „Kraljica.“ Neko ponovo gradi Arhitektinu mrežu."] },
+ { city: "Boston", diff: "hard", mod: { suspects: 10, decoys: 3 }, title: ["The Judge’s Ledger", "Sudijina knjiga"],
+   brief: ["Chief Marlow: “The judge kept a ledger: four officials who took the Architect’s money. One of them is now dead in Boston. Someone is cleaning house.”", "Šef Marlow: „Sudija je vodio knjigu: četiri funkcionera koja su uzimala Arhitektin novac. Jedan je sada mrtav u Bostonu. Neko čisti kuću.“"],
+   debrief: ["Three names remain on the ledger. One of them is a cop you know.", "Ostala su tri imena u knjizi. Jedno je policajac koga poznaješ."] },
+ { city: "Seattle", diff: "hard", mod: { suspects: 10, cctv: false }, title: ["Cold Harbor", "Hladna luka"],
+   brief: ["Detective Vance: “A protected witness drowned in Seattle. The cameras were switched off an hour earlier. Only someone inside the system could do that.”", "Detektiv Vance: „Zaštićeni svedok se udavio u Sijetlu. Kamere su ugašene sat ranije. To može samo neko iz sistema.“"],
+   debrief: ["Before dying, the witness left you a message: “Don’t trust the blue coat.” Vance wears a blue coat.", "Pre smrti, svedok ti je ostavio poruku: „Ne veruj plavom kaputu.“ Vance nosi plavi kaput."] },
+ { city: "Miami", diff: "expert", mod: { suspects: 11 }, title: ["Sunburn", "Opekotina"],
+   brief: ["Chief Marlow: “Miami, a fire at a marina: two bodies, burned evidence and a rook melted into a lighter. Whoever did this is thorough. Don’t rush.”", "Šef Marlow: „Majami, požar u marini: dva tela, spaljeni dokazi i top istopljen u upaljaču. Ko god je ovo uradio je temeljan. Ne žuri.“"],
+   debrief: ["The lighter belongs to the Queen’s inner circle: six people called the Court. Four names are still missing.", "Upaljač pripada Kraljičinom užem krugu: šest ljudi koji se zovu Dvor. Četiri imena još nedostaju."] },
+ { city: "New Orleans", diff: "expert", mod: { suspects: 11, decoys: 4 }, title: ["Queen’s Gambit", "Kraljičin gambit"],
+   brief: ["Chief Marlow: “New Orleans. A black queen has replaced the rook. Everyone in this city lies politely, so trust your notebook, not the smile.”", "Šef Marlow: „Nju Orleans. Crna kraljica je zamenila topa. Svi u ovom gradu lažu učtivo, zato veruj beležnici, a ne osmehu.“"],
+   debrief: ["The dead man was a courier who knew where the Court meets. Marlow sends you a coded message: “Come alone.”", "Mrtvac je bio kurir koji je znao gde se Dvor sastaje. Marlow ti šalje šifrovanu poruku: „Dođi sam.“"] },
+ { city: "New York", diff: "expert", mod: { suspects: 12 }, title: ["Internal Affairs", "Unutrašnja kontrola"],
+   brief: ["Detective Vance corners you: “The leak is in your station. I need your help to prove who. Trust me, or don’t.” A murder in New York is his excuse to get you out of town.", "Detektiv Vance te sačekuje: „Curenje je u tvojoj stanici. Treba mi tvoja pomoć da dokažem ko. Veruj mi, ili ne.“ Ubistvo u Njujorku mu je izgovor da te izvuče iz grada."],
+   debrief: ["It was not Marlow. The leak was a clerk in your station who sold the schedule, and now she is silent. But Vance knew about her all along.", "Nije Marlow. Curila je službenica u tvojoj stanici koja je prodala raspored, a sada ćuti. Ali Vance je znao za nju od početka."],
+   choice: { q: ["Vance admits he used you as bait. Do you forgive him?", "Vance priznaje da te je iskoristio kao mamac. Praštaš li mu?"], o: [
+     { t: ["Forgive him (+1 police tail and a known lead next case)", "Oprosti mu (+1 praćenje policije i poznat trag u sledećem slučaju)"], e: "tail+lead", r: ["Vance nods. “I owe you one.”", "Vance klima glavom. „Dugujem ti.“"] },
+     { t: ["Report him (+$250)", "Prijavi ga (+250$)"], e: "cash250", r: ["Vance is suspended. The case is cleaner, the station colder.", "Vance je suspendovan. Slučaj je čistiji, a stanica hladnija."] }] } },
+ { city: "Los Angeles", diff: "expert", mod: { suspects: 12, decoys: 4 }, title: ["Final Cut", "Završna montaža"],
+   brief: ["Chief Marlow: “A studio owner is dead and the security tapes have been edited. Every suspect has an alibi that looks too perfect, like a scene shot twice.”", "Šef Marlow: „Vlasnik studija je mrtav, a snimci obezbeđenja su montirani. Svaki osumnjičeni ima alibi koji deluje previše savršeno, kao scena snimljena dvaput.“"],
+   debrief: ["The edited tape hides the Queen’s face, but not her voice: it belongs to someone who has sat in Marlow’s office for years.", "Montirani snimak krije Kraljičino lice, ali ne i glas: pripada nekome ko godinama sedi u Marlowovoj kancelariji."] },
+ { city: "Las Vegas", diff: "expert", mod: { suspects: 14, decoys: 4 }, boss: ["Evelyn Stone", "Gallery owner"], title: ["Checkmate", "Šah-mat"],
+   brief: ["Chief Marlow: “Las Vegas. The Queen’s last move: a rook on your badge and a queen on my desk. Too many suspects, too few hours. This is the end of the board.”", "Šef Marlow: „Las Vegas. Kraljičin poslednji potez: top na tvojoj znački i kraljica na mom stolu. Previše osumnjičenih, premalo sati. Ovo je kraj table.“"],
+   debrief: ["In cuffs, the Queen smiles: “You were never the pawn, Detective. You were the king.” Marlow salutes you. The city sleeps a little safer tonight. THE END.", "U lisicama, Kraljica se osmehuje: „Nikad nisi bio pion, detektive. Bio si kralj.“ Marlow ti salutira. Grad večeras spava malo sigurnije. KRAJ."] }
 ];
 const LG = () => (lang === "sr" ? 1 : 0);
 function storyBtn(label, fn) {
@@ -1307,13 +1336,13 @@ function showDebrief(i) {
 // ================= STORY HUB (apartment + police station) =================
 let hubFrom = false, aptCalled = false;
 const LL = (en, sr) => (lang === "sr" ? sr : en);
-const PLY = 305;
+const PLY = 415;
 let plX = 300, walkId = 0;
-const STAND = { call: 380, adoor: 70, door: 700, board: 150, computer: 380, phone: 522, coffee: 600, bed: 150, marlow: 440, vance: 225, hphone: 380, hdoor: 70, hbed: 235 };
+const STAND = { call: 380, adoor: 70, door: 700, board: 150, computer: 380, phone: 522, coffee: 600, bed: 150, marlow: 440, vance: 225, hphone: 380, hdoor: 70, hbed: 235, exit: 70, barista: 560, pat1: 140, pat2: 310, whisper: 465, walker: 615, bench: 380 };
 const raf = f => (typeof requestAnimationFrame === "function" ? requestAnimationFrame(f) : setTimeout(() => f(Date.now()), 16));
-const figInner = (coat, hat, skin = "#c9a98a", style = "fedora") => `<g class="fig"><g class="body"><ellipse cx="0" cy="2" rx="16" ry="4" fill="#000" opacity=".4"/><rect class="lg" x="-9" y="-22" width="7" height="22" fill="#14171f"/><rect class="lg2" x="2" y="-22" width="7" height="22" fill="#14171f"/><rect x="-12" y="-64" width="24" height="46" rx="6" fill="${coat}"/><circle cx="0" cy="-74" r="10" fill="${skin}"/>${style === "fedora" ? `<rect x="-15" y="-82" width="30" height="5" fill="${hat}"/><rect x="-9" y="-93" width="18" height="12" rx="3" fill="${hat}"/>` : style === "cap" ? `<rect x="-10" y="-87" width="20" height="9" rx="4" fill="${hat}"/><rect x="2" y="-80" width="15" height="3" fill="${hat}"/>` : `<path d="M-10 -78Q0 -92 10 -78Z" fill="#2a1a10"/>`}</g></g>`;
-const plSvg = () => { const d = profile.detective || {}; return `<g id="pl" transform="translate(${plX},${PLY})">${figInner(d.coat || "#3a3f4b", d.hatc || "#1a1d26", d.skin || "#c9a98a", d.hat || "fedora")}</g>`; };
-const npcSvg = (id, x, coat, hat, label) => `<g class="hot npc" onclick="hubGo('${id}')"><g transform="translate(${x},${PLY})">${figInner(coat, hat)}</g><text x="${x}" y="${PLY - 100}" text-anchor="middle">${label}</text></g>`;
+const figInner = (coat, hat, skin = "#c9a98a", style = "fedora", sx = 1, sy = 1) => `<g class="fig"><g class="body"><g transform="scale(1.35,${(1.35 * sy).toFixed(2)})"><ellipse cx="0" cy="2" rx="${16 * sx}" ry="4" fill="#000" opacity=".4"/><rect class="lg" x="${-9 * sx}" y="-22" width="${7 * sx}" height="22" fill="#14171f"/><rect class="lg2" x="${2 * sx}" y="-22" width="${7 * sx}" height="22" fill="#14171f"/><rect x="${-12 * sx}" y="-64" width="${24 * sx}" height="46" rx="6" fill="${coat}"/><circle cx="0" cy="-74" r="10" fill="${skin}"/><circle cx="-3.6" cy="-75" r="2" fill="#fff"/><circle cx="3.6" cy="-75" r="2" fill="#fff"/><circle cx="-3.6" cy="-75" r="1" fill="#111"/><circle cx="3.6" cy="-75" r="1" fill="#111"/><path d="M-3 -69Q0 -66.5 3 -69" stroke="#5a2a2a" stroke-width="1.1" fill="none"/>${style === "fedora" ? `<rect x="-15" y="-82" width="30" height="5" fill="${hat}"/><rect x="-9" y="-93" width="18" height="12" rx="3" fill="${hat}"/>` : style === "cap" ? `<rect x="-10" y="-87" width="20" height="9" rx="4" fill="${hat}"/><rect x="2" y="-80" width="15" height="3" fill="${hat}"/>` : `<path d="M-10 -78Q0 -92 10 -78Z" fill="#2a1a10"/>`}</g></g></g>`;
+const plSvg = () => { const d = profile.detective || {}; return `<g id="pl" transform="translate(${plX},${PLY})">${figInner(d.coat || "#3a3f4b", d.hatc || "#1a1d26", d.skin || "#c9a98a", d.hat || "fedora", d.build || 1, d.tall || 1)}</g>`; };
+const npcSvg = (id, x, coat, hat, label) => { const sx = [0.85, 1, 1.15, 1.3][hash(id) % 4], sy = [0.92, 1, 1.08][hash(id + "h") % 3]; return `<g class="hot npc" onclick="hubGo('${id}')"><g transform="translate(${x},${PLY})">${figInner(coat, hat, ["#f1d3b3", "#c9a98a", "#a47a5a", "#6b4a35"][hash(id + "s") % 4], "fedora", sx, sy)}</g><text x="${x}" y="${PLY - 134 * sy}" text-anchor="middle">${label}</text></g>`; };
 
 function walkTo(x, cb) {
     const pl = document.getElementById("pl");
@@ -1349,36 +1378,68 @@ function svgPoint(e) {
 function floorClick(e) { const p = svgPoint(e); if (p) walkTo(Math.max(30, Math.min(770, p.x))); }
 function hubGo(k) { walkTo(STAND[k], () => hubAct(k)); }
 
+const isRain = () => hash("w" + profile.day) % 10 < 4;
+function skyScene(h, rain) {
+    const day = h >= 8 && h < 17, dusk = (h >= 5 && h < 8) || (h >= 17 && h < 20);
+    const [t, b] = day ? ["#5b9bd5", "#cfe3f5"] : dusk ? ["#3a3560", "#ff9a4a"] : ["#04050c", "#141b2d"];
+    let o = `<defs><linearGradient id="skg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${t}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="800" height="450" fill="url(#skg)"/>`;
+    if (day) { const sxp = 100 + (h - 8) / 9 * 600, syp = 170 - 120 * Math.sin(Math.PI * (h - 8) / 9); o += `<circle cx="${sxp}" cy="${syp}" r="56" fill="#fff3b0" opacity=".25"/><circle cx="${sxp}" cy="${syp}" r="32" fill="#fff3b0"/>`; }
+    else if (dusk) o += `<circle cx="${h < 12 ? 120 : 680}" cy="240" r="36" fill="#ffd27a"/>`;
+    else o += `<circle cx="640" cy="80" r="24" fill="#dfe6f2"/>` + [...Array(24)].map((_, i) => `<circle cx="${(i * 97) % 800}" cy="${(i * 53) % 200}" r="1.3" fill="#fff" opacity=".7"/>`).join("");
+    o += [[140, 80], [430, 55], [650, 105]].map(([x, y]) => `<g opacity="${day ? 0.85 : 0.14}" fill="${rain ? "#6b7380" : "#fff"}"><ellipse cx="${x}" cy="${y}" rx="64" ry="17"/><ellipse cx="${x + 30}" cy="${y - 11}" rx="40" ry="14"/></g>`).join("");
+    if (rain) o += `<g class="rain">${[...Array(70)].map((_, i) => `<line x1="${(i * 61) % 800}" y1="${(i * 37) % 400}" x2="${(i * 61) % 800 - 6}" y2="${(i * 37) % 400 + 18}" stroke="#aebfd6" opacity=".4"/>`).join("")}</g>`;
+    return o;
+}
+const treeSvg = (x, sc, night) => { const g = night ? ["#16301b", "#1b3a22", "#12281a"] : ["#2f6b3a", "#357a42", "#2a5e34"]; return `<g transform="translate(${x},400) scale(${sc})"><rect x="-6" y="-70" width="12" height="70" fill="#4a3320"/><circle cx="0" cy="-90" r="34" fill="${g[0]}"/><circle cx="-22" cy="-70" r="24" fill="${g[1]}"/><circle cx="22" cy="-72" r="24" fill="${g[2]}"/></g>`; };
+const lampSvg = (x, on) => `<g transform="translate(${x},400)"><rect x="-3" y="-120" width="6" height="120" fill="#1a1d26"/><circle cx="0" cy="-124" r="9" fill="#ffd98a" opacity="${on ? 1 : 0.35}"/>${on ? `<circle cx="0" cy="-124" r="28" fill="#ffd98a" opacity=".18"/>` : ""}</g>`;
 function hubSvg(kind) {
     const hot = (id, inner, lx, ly, label) => `<g class="hot" onclick="hubGo('${id}')">${inner}<text x="${lx}" y="${ly}" text-anchor="middle">${label}</text></g>`;
-    let rain = "";
-    for (let i = 0; i < 40; i++) rain += `<line x1="${540 + (i * 37) % 230}" y1="${30 + (i * 53) % 170}" x2="${534 + (i * 37) % 230}" y2="${48 + (i * 53) % 170}" stroke="#9fb2cc" opacity=".35"/>`;
-    let sky = "";
-    for (let i = 0; i < 9; i++) sky += `<rect x="${545 + i * 25}" y="${110 + (i * 29) % 60}" width="20" height="${110 - (i * 29) % 60}" fill="#070a12"/>`;
-    const base = `<defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b0d14"/><stop offset="1" stop-color="#171d2c"/></linearGradient></defs><rect width="800" height="340" fill="url(#hg)"/><rect y="290" width="800" height="50" fill="#06070b"/><rect x="0" y="240" width="800" height="100" fill="transparent" onclick="floorClick(event)"/>`;
+    const hr = profile.hour, day = hr >= 8 && hr < 17, night = !(hr >= 7 && hr < 19), rain = isRain();
+    const floor = `<rect x="0" y="350" width="800" height="100" fill="transparent" onclick="floorClick(event)"/>`;
+    const room = (a, b) => `<defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="800" height="450" fill="url(#hg)"/><rect y="400" width="800" height="50" fill="#0b0c12"/>${floor}`;
+    const svg = (inner, npcs) => `<svg class="${day ? "day" : ""}" viewBox="0 0 800 450">${inner}${npcs || ""}${plSvg()}</svg>`;
+    const exitDoor = hot("exit", `<rect x="14" y="60" width="80" height="230" fill="#1a1410" stroke="#8a6a3a" stroke-width="4"/><circle cx="80" cy="180" r="5" fill="#e8c36a"/>`, 54, 50, LL("🚪 EXIT", "🚪 IZLAZ"));
+    if (kind === "park") {
+        return svg(`${skyScene(hr, rain)}<rect y="400" width="800" height="50" fill="${day ? "#3c7a46" : "#10231a"}"/>${floor}<ellipse cx="590" cy="425" rx="120" ry="16" fill="${day ? "#4a8ab0" : "#14283a"}"/>${[60, 190, 720, 780].map((x, i) => treeSvg(x, 1 + (i % 2) * 0.3, night)).join("")}${lampSvg(300, night)}${lampSvg(540, night)}
+${hot("bench", `<rect x="330" y="372" width="100" height="10" fill="#6b4a2f"/><rect x="335" y="352" width="90" height="8" fill="#5a3a22"/><rect x="340" y="382" width="6" height="18" fill="#3a2a1a"/><rect x="414" y="382" width="6" height="18" fill="#3a2a1a"/>`, 380, 340, LL("🪑 BENCH", "🪑 KLUPA"))}
+${hot("exit", `<rect x="14" y="320" width="64" height="80" rx="4" fill="#223" stroke="#556" stroke-width="3"/><text x="46" y="372" text-anchor="middle" font-size="28" fill="#e2e8f0">◀</text>`, 46, 310, LL("STREET", "ULICA"))}`,
+            (profile.events.some(e => e.type === "meet" && e.status === "open") ? npcSvg("whisper", 500, "#2a2a2a", "#111", "Whisper") : "") + npcSvg("walker", 650, "#3a4a2a", "#222", LL("Stranger", "Stranac")));
+    }
+    if (kind === "cafe") {
+        const bottles = [...Array(10)].map((_, i) => `<rect x="${470 + i * 30}" y="${120 + (i % 2) * 2}" width="10" height="${30 + (i % 3) * 6}" rx="3" fill="${["#7a2a2a", "#2a5a3a", "#6a5a2a", "#2a3a6a"][i % 4]}"/>`).join("");
+        return svg(`${room("#3a2a22", "#2a1f1a")}<g transform="translate(0,110)"><rect x="440" y="40" width="330" height="8" fill="#6b4a2f"/><rect x="440" y="60" width="330" height="8" fill="#6b4a2f"/>${bottles}
+${[100, 270].map(x => `<rect x="${x}" y="245" width="90" height="10" fill="#7a5a3a"/><rect x="${x + 40}" y="255" width="10" height="35" fill="#4a3320"/>`).join("")}
+<rect x="430" y="235" width="350" height="55" fill="#5a3a22" stroke="#7a5a3a" stroke-width="2"/><rect x="430" y="230" width="350" height="8" fill="#8a6a4a"/><rect x="700" y="200" width="46" height="32" fill="#2a2f3a" stroke="#555"/>
+<text x="250" y="60" text-anchor="middle" fill="#e8c36a" font-size="18">☕ CAFÉ</text>${exitDoor}</g>`,
+            npcSvg("barista", 600, "#6a4a2a", "#2a1a10", "Barista") + npcSvg("pat1", 175, "#2a4a5a", "#1a1a2a", LL("Regular", "Stalni gost")) + npcSvg("pat2", 345, "#5a2a4a", "#2a1a1a", LL("Regular", "Stalni gost")));
+    }
     const home = kind === "home";
     if (kind === "apt" || home) {
-        return `<svg viewBox="0 0 800 340">${base}<rect x="540" y="30" width="230" height="190" fill="#10192b" stroke="#2d3748" stroke-width="4"/>${sky}<g class="rain">${rain}</g>
-<rect x="110" y="215" width="250" height="75" fill="#1c2230"/><rect x="110" y="195" width="80" height="40" rx="6" fill="#2a3144"/><rect x="380" y="245" width="100" height="45" fill="#161920"/>${home ? hot("hbed", `<rect x="110" y="195" width="250" height="95" fill="#fff" opacity="0.02"/>`, 235, 185, LL("🛏 BED", "🛏 KREVET")) : ""}
-<circle cx="500" cy="215" r="14" fill="#ffd98a" opacity=".5"/>
-${hot(home ? "hphone" : "call", `<rect class="ring" x="398" y="226" width="64" height="18" rx="4" fill="#00f0ff" opacity=".85"/>`, 430, 218, LL("📞 PHONE", "📞 TELEFON"))}
-${hot(home ? "hdoor" : "adoor", `<rect x="14" y="60" width="80" height="230" fill="#1a1410" stroke="#8a6a3a" stroke-width="4"/><circle cx="80" cy="180" r="5" fill="#e8c36a"/>`, 54, 50, LL("🚪 DOOR", "🚪 VRATA"))}${plSvg()}${tint()}</svg>`;
+        let sk = "";
+        for (let i = 0; i < 10; i++) sk += `<rect x="${i * 80}" y="${300 + (i * 37) % 90}" width="70" height="200" fill="#070a12"/>`;
+        return svg(`${room("#1b2236", "#2a3550")}<g transform="translate(0,110)"><rect x="536" y="26" width="238" height="198" fill="#10192b" stroke="#4a5568" stroke-width="5"/><svg x="540" y="30" width="230" height="190" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid slice">${skyScene(hr, rain)}${sk}</svg>
+<rect x="110" y="215" width="250" height="75" fill="#3a4560" stroke="#4a5878"/><rect x="110" y="195" width="80" height="40" rx="6" fill="#56648a"/><rect x="380" y="245" width="110" height="45" fill="#3a2f26" stroke="#5a4a3a" stroke-width="2"/>
+<rect x="468" y="200" width="4" height="45" fill="#1a1d26"/><path d="M452 205L488 205L480 180L460 180Z" fill="#e8c36a" opacity=".85"/>
+${home ? hot("hbed", `<rect x="110" y="195" width="250" height="95" fill="#fff" opacity="0.02"/>`, 235, 185, LL("🛏 BED", "🛏 KREVET")) : ""}
+${hot(home ? "hphone" : "call", `<rect class="ring" x="395" y="231" width="52" height="14" rx="3" fill="#00f0ff"/><rect x="402" y="225" width="38" height="7" rx="3" fill="#08a0aa"/>`, 421, 215, LL("📞 PHONE", "📞 TELEFON"))}
+${hot(home ? "hdoor" : "adoor", `<rect x="14" y="60" width="80" height="230" fill="#4a3a2a" stroke="#8a6a3a" stroke-width="4"/><circle cx="80" cy="180" r="5" fill="#e8c36a"/>`, 54, 50, LL("🚪 DOOR", "🚪 VRATA"))}</g>${tint()}`);
     }
-    const photos = [[48, 56], [108, 70], [168, 54], [60, 120], [140, 124]].map(([x, y]) => `<rect x="${x}" y="${y}" width="44" height="36" fill="#cfd2d6" opacity=".8"/>`).join("");
-    return `<svg viewBox="0 0 800 340">${base}
-<rect x="262" y="252" width="310" height="38" fill="#1b2130"/><rect x="262" y="250" width="310" height="4" fill="#2a3144"/>
-${hot("board", `<rect x="30" y="30" width="230" height="170" fill="#2b2118" stroke="#6b4a2f" stroke-width="4"/>${photos}<path d="M70 74L130 88L190 72L82 138L162 142" stroke="#ff3e3e" stroke-width="2" fill="none"/>`, 145, 220, LL("🗂 BOARD", "🗂 TABLA"))}
-${hot("computer", `<rect x="300" y="140" width="160" height="105" fill="#08141a" stroke="#00f0ff" stroke-width="3"/><rect x="316" y="156" width="128" height="72" fill="#0a2a33"/><rect x="270" y="245" width="220" height="14" fill="#2a3144"/>`, 380, 275, LL("🖥 COMPUTER / SHOP", "🖥 RAČUNAR / PRODAVNICA"))}
-${hot("phone", `<rect x="500" y="238" width="44" height="14" rx="3" fill="#00f0ff" opacity=".85"/>`, 522, 230, LL("📞 PHONE", "📞 TELEFON"))}
-${hot("coffee", `<rect x="580" y="180" width="64" height="110" rx="6" fill="#3a2a22" stroke="#6b4a2f" stroke-width="3"/><circle cx="612" cy="218" r="12" fill="#ff3e3e" opacity=".6"/>`, 612, 170, LL("☕ COFFEE", "☕ KAFA"))}
-${hot("bed", `<rect x="40" y="250" width="220" height="40" fill="#1c2230"/><rect x="40" y="232" width="64" height="26" rx="5" fill="#2a3144"/>`, 150, 322, LL("🛏 BED", "🛏 KREVET"))}
-${hot("door", `<rect x="690" y="70" width="90" height="220" fill="#1a1410" stroke="#8a6a3a" stroke-width="4"/><circle cx="762" cy="190" r="5" fill="#e8c36a"/>`, 735, 60, LL("🚪 DOOR", "🚪 VRATA"))}
-${!profile.tutorialDone || (profile.hour >= 7 && profile.hour < 22) ? npcSvg("marlow", 480, "#5a1f1f", "#2a1010", "Marlow") : ""}${profile.chapter >= 1 && profile.hour >= 9 && profile.hour < 20 ? npcSvg("vance", 225, "#1f3a5a", "#0f1a2a", "Vance") : ""}${plSvg()}${tint()}</svg>`;
+    const photos = [[48, 56], [108, 70], [168, 54], [60, 120], [140, 124]].map(([x, y]) => `<rect x="${x}" y="${y}" width="44" height="36" fill="#cfd2d6" opacity=".85"/>`).join("");
+    const marlowHere = !profile.tutorialDone || (profile.hour >= 7 && profile.hour < 22), vanceHere = profile.chapter >= 1 && profile.hour >= 9 && profile.hour < 20;
+    return svg(`${room("#1b2236", "#26304a")}<g transform="translate(0,110)">
+${hot("board", `<rect x="30" y="30" width="230" height="170" fill="#3a2d20" stroke="#6b4a2f" stroke-width="4"/>${photos}<path d="M70 74L130 88L190 72L82 138L162 142" stroke="#ff3e3e" stroke-width="2" fill="none"/>`, 145, 220, LL("🗂 BOARD", "🗂 TABLA"))}
+<rect x="262" y="250" width="330" height="40" fill="#2f3850" stroke="#46557a" stroke-width="2"/>
+${hot("computer", `<rect x="300" y="140" width="160" height="105" fill="#08141a" stroke="#00f0ff" stroke-width="3"/><rect x="316" y="156" width="128" height="72" fill="#0a3a44"/><rect x="360" y="245" width="40" height="6" fill="#46557a"/>`, 380, 280, LL("🖥 COMPUTER / SHOP", "🖥 RAČUNAR / PRODAVNICA"))}
+${hot("phone", `<rect x="500" y="236" width="48" height="14" rx="3" fill="#00f0ff"/><rect x="506" y="230" width="36" height="7" rx="3" fill="#08a0aa"/>`, 524, 222, LL("📞 PHONE", "📞 TELEFON"))}
+${hot("coffee", `<rect x="580" y="180" width="64" height="110" rx="6" fill="#4a3426" stroke="#6b4a2f" stroke-width="3"/><circle cx="612" cy="218" r="12" fill="#ff3e3e" opacity=".7"/>`, 612, 170, LL("☕ COFFEE", "☕ KAFA"))}
+${hot("bed", `<rect x="40" y="250" width="220" height="40" fill="#3a4560" stroke="#4a5878"/><rect x="40" y="232" width="64" height="26" rx="5" fill="#56648a"/>`, 150, 322, LL("🛏 BED", "🛏 KREVET"))}
+${hot("door", `<rect x="690" y="70" width="90" height="220" fill="#4a3a2a" stroke="#8a6a3a" stroke-width="4"/><circle cx="762" cy="190" r="5" fill="#e8c36a"/>`, 735, 60, LL("🚪 DOOR", "🚪 VRATA"))}</g>${tint()}`,
+        (marlowHere ? npcSvg("marlow", 480, "#5a1f1f", "#2a1010", "Marlow") : "") + (vanceHere ? npcSvg("vance", 225, "#1f3a5a", "#0f1a2a", "Vance") : ""));
 }
 const COATS = ["#3a3f4b", "#5a3a2a", "#2a3a5a", "#2f4a3a", "#5a2a3a"], HATC = ["#1a1d26", "#5a4a2a", "#7a7a7a", "#3a1a1a"], SKINS = ["#f1d3b3", "#c9a98a", "#a47a5a", "#6b4a35"], HATS = ["fedora", "cap", "none"];
 let draft = null;
 function showCreator() {
-    draft = draft || { name: "Alex Cole", coat: COATS[0], hatc: HATC[0], skin: SKINS[1], hat: "fedora" };
+    draft = draft || { name: "Alex Cole", coat: COATS[0], hatc: HATC[0], skin: SKINS[1], hat: "fedora", build: 1, tall: 1 };
     el("creatorTitle").innerText = "🕵️ " + LL("Create your detective", "Napravi svog detektiva");
     el("detName").value = draft.name;
     el("creatorBtn").innerText = LL("▶ CONTINUE", "▶ NASTAVI");
@@ -1386,23 +1447,24 @@ function showCreator() {
     switchScreen("creatorScreen");
 }
 function renderCreator() {
-    el("detPreview").innerHTML = `<svg viewBox="0 0 200 200"><rect width="200" height="200" fill="#0b0d14"/><g transform="translate(100,180) scale(1.7)">${figInner(draft.coat, draft.hatc, draft.skin, draft.hat)}</g></svg>`;
+    el("detPreview").innerHTML = `<svg viewBox="0 0 200 200"><rect width="200" height="200" fill="#0b0d14"/><g transform="translate(100,190) scale(1.25)">${figInner(draft.coat, draft.hatc, draft.skin, draft.hat, draft.build, draft.tall)}</g></svg>`;
     const sw = (key, arr) => arr.map(c => `<button class="swatch${draft[key] === c ? " on" : ""}" style="background:${c}" onclick="pickLook('${key}','${c}')"></button>`).join("");
-    const names = { fedora: LL("Fedora", "Šešir"), cap: LL("Cap", "Kapa"), none: LL("No hat", "Bez kape") };
-    const hats = HATS.map(h => `<button class="button${draft.hat === h ? " active" : ""}" onclick="pickLook('hat','${h}')">${names[h]}</button>`).join("");
-    el("detOptions").innerHTML = `<p>${LL("Coat", "Kaput")}: ${sw("coat", COATS)}</p><p>${LL("Hat", "Šešir")}: ${hats}</p><p>${LL("Hat color", "Boja šešira")}: ${sw("hatc", HATC)}</p><p>${LL("Skin", "Ten")}: ${sw("skin", SKINS)}</p>`;
+    const opt = (key, vals, names) => vals.map((v, i) => `<button class="button${draft[key] === v ? " active" : ""}" onclick="pickLook('${key}','${v}')">${names[i]}</button>`).join("");
+    const hats = opt("hat", HATS, [LL("Fedora", "Šešir"), LL("Cap", "Kapa"), LL("No hat", "Bez kape")]);
+    el("detOptions").innerHTML = `<p>${LL("Coat", "Kaput")}: ${sw("coat", COATS)}</p><p>${LL("Hat", "Šešir")}: ${hats}</p><p>${LL("Hat color", "Boja šešira")}: ${sw("hatc", HATC)}</p><p>${LL("Skin", "Ten")}: ${sw("skin", SKINS)}</p><p>${LL("Build", "Građa")}: ${opt("build", [0.85, 1, 1.25], [LL("Slim", "Mršav"), LL("Average", "Srednji"), LL("Stocky", "Jak")])}</p><p>${LL("Height", "Visina")}: ${opt("tall", [0.9, 1, 1.1], [LL("Short", "Nizak"), LL("Average", "Srednji"), LL("Tall", "Visok")])}</p>`;
 }
-function pickLook(k, v) { draft.name = el("detName").value || draft.name; draft[k] = v; renderCreator(); }
+function pickLook(k, v) { draft.name = el("detName").value || draft.name; draft[k] = (k === "build" || k === "tall") ? Number(v) : v; renderCreator(); }
 function finishCreator() {
     const name = ((el("detName").value || draft.name || "Alex Cole") + "").trim().slice(0, 14) || "Alex Cole";
-    profile.detective = { name, coat: draft.coat, hat: draft.hat, hatc: draft.hatc, skin: draft.skin };
+    profile.detective = { name, coat: draft.coat, hat: draft.hat, hatc: draft.hatc, skin: draft.skin, build: draft.build, tall: draft.tall };
     saveProfile();
     showApartment();
 }
 const hh = () => String(Math.floor(profile.hour)).padStart(2, "0") + ":" + String(Math.round((profile.hour % 1) * 60)).padStart(2, "0");
+const PLACE_NAME = { station: ["🏢", "Police station", "Policijska stanica"], home: ["🏠", "Your apartment", "Tvoj stan"], apt: ["🏠", "Your apartment", "Tvoj stan"], cafe: ["☕", "Café", "Kafić"], park: ["🌳", "Park", "Park"] };
 function hubHeader() {
-    const d = profile.detective;
-    return `🏢 ${LL("Police station", "Policijska stanica")} · ${d ? d.name + " · " : ""}${dateStr()} · ${hh()} · $${profile.cash} · ⭐${profile.rep}`;
+    const d = profile.detective, n = PLACE_NAME[where] || PLACE_NAME.station;
+    return `${n[0]} ${LL(n[1], n[2])} · ${d ? d.name + " · " : ""}${dateStr()} · ${hh()} · $${profile.cash} · ⭐${profile.rep}`;
 }
 function tint() {
     const h = profile.hour;
@@ -1462,9 +1524,25 @@ function hubAct(k) {
             : pick([LL("Check every alibi twice. The murder happened at midnight.", "Proveri svaki alibi dvaput. Ubistvo se desilo u ponoć."), LL("A tool is only as good as the detective holding it. Visit the computer.", "Alat vredi onoliko koliko i detektiv koji ga drži. Svrati do računara."), LL("Sleep when you must, rookie. Tired detectives make wrong arrests.", "Spavaj kad moraš, početniče. Umorni detektivi pogrešno hapse."), LL("That black rook... somebody wants us to look at it.", "Taj crni top... neko želi da ga gledamo.")])) + "”");
     } else if (k === "vance") {
         hubSay("Vance: “" + pick([LL("Still alive, rookie? The Architect isn’t a patient man.", "Još si živ, početniče? Arhitekta nije strpljiv čovek."), LL("I read your reports. Not bad. Don’t let it go to your head.", "Čitao sam tvoje izveštaje. Nije loše. Nemoj da ti ode u glavu."), LL("Internal Affairs is watching everyone. Even Marlow.", "Unutrašnja kontrola prati sve. Čak i Marlowa.")]) + "”");
+    } else if (k === "exit") {
+        showCity();
+    } else if (k === "barista") {
+        if (profile.cash < 10) { hubSay(LL("You can’t afford coffee ($10).", "Ne možeš da priuštiš kafu (10$).")); return; }
+        profile.cash -= 10; profile.coffee = 1; advance(1);
+        hubSay(LL("Strong and bitter. You can stay awake 3 hours longer in your next case.", "Jaka i gorka. U sledećem slučaju možeš da ostaneš budan 3 sata duže."));
+    } else if (k === "pat1" || k === "pat2") {
+        hubSay(rumorText(0.25));
+    } else if (k === "whisper") {
+        completeMeet();
+    } else if (k === "walker") {
+        const r = pick(PED_LINES);
+        hubSay("“" + LL(r[0], r[1]) + "”");
+    } else if (k === "bench") {
+        advance(1);
+        hubSay(LL("You sit and watch the city for an hour. Thinking helps.", "Sediš i sat vremena posmatraš grad. Razmišljanje pomaže."));
     } else if (k === "hbed") {
         sleepNow();
-        hubSay(pick([LL("You sleep until morning. The rain has finally stopped.", "Spavaš do jutra. Kiša je konačno prestala."), LL("A good night’s sleep. Somewhere a phone is already ringing.", "Dobar san. Negde već zvoni telefon.")]));
+        hubSay(pick([isRain() ? LL("You sleep until morning. It is still raining.", "Spavaš do jutra. Kiša i dalje pada.") : LL("You sleep until morning. The sky is clear.", "Spavaš do jutra. Nebo je vedro."), LL("A good night’s sleep. Somewhere a phone is already ringing.", "Dobar san. Negde već zvoni telefon.")]));
     } else if (k === "hdoor") {
         showCity();
     } else if (k === "hphone") {
@@ -1516,7 +1594,7 @@ function cardSvg(c) {
 function boardLines() {
     const byId = {};
     boardCards().forEach(c => byId[c.id] = c);
-    const as = state.tutorial ? 2 : DIFFICULTY[state.diff].assist;
+    const as = state.tutorial ? 2 : (state.d || DIFFICULTY[state.diff]).assist;
     el("boardLines").innerHTML = state.board.links.map(([a, b]) => {
         const A = byId[a], B = byId[b];
         if (!A || !B) return "";
@@ -1568,13 +1646,58 @@ function renderBoard() {
 
 // ================= OPEN CITY, CALENDAR, EVENTS =================
 let where = "city", lastDoor = 415, pendingCall = null;
-const CITY_B = [
-    { id: "home", x: 40, w: 120, icon: "🏠", en: "Your apartment", sr: "Tvoj stan", col: "#1b2130", h: 150 },
-    { id: "cafe", x: 190, w: 120, icon: "☕", en: "Café", sr: "Kafić", col: "#2a1f1a", h: 130 },
-    { id: "station", x: 340, w: 150, icon: "🏢", en: "Police station", sr: "Policijska stanica", col: "#18202e", h: 190 },
-    { id: "park", x: 520, w: 120, icon: "🌳", en: "Park", sr: "Park", col: "#12261a", h: 110 },
-    { id: "shop", x: 670, w: 110, icon: "🛒", en: "Supplies", sr: "Oprema", col: "#241a2a", h: 140 }
+const DISTRICTS = [
+    { id: "harbor", en: "Harbor", sr: "Luka", b: [
+        { id: "docks", x: 60, w: 120, h: 130, icon: "⚓", en: "Docks", sr: "Dokovi", col: "#1a2a34" },
+        { id: "bar", x: 260, w: 130, h: 120, icon: "🍺", en: "Rusty Anchor", sr: "Zarđalo sidro", col: "#2a1c1c" },
+        { id: "pawn", x: 470, w: 120, h: 110, icon: "💍", en: "Pawn shop", sr: "Zalagaonica", col: "#262018" },
+        { id: "warehouse", x: 650, w: 120, h: 150, icon: "📦", en: "Warehouse", sr: "Skladište", col: "#1c2024" }], trees: [], lamps: [200, 420, 610] },
+    { id: "down", en: "Downtown", sr: "Centar", b: [
+        { id: "home", x: 30, w: 110, h: 150, icon: "🏠", en: "Your apartment", sr: "Tvoj stan", col: "#1b2130" },
+        { id: "cafe", x: 180, w: 110, h: 130, icon: "☕", en: "Café", sr: "Kafić", col: "#2a1f1a" },
+        { id: "station", x: 330, w: 140, h: 190, icon: "🏢", en: "Police station", sr: "Policijska stanica", col: "#18202e" },
+        { id: "park", x: 520, w: 110, h: 100, icon: "🌳", en: "Park", sr: "Park", col: "#12261a" },
+        { id: "shop", x: 660, w: 110, h: 140, icon: "🛒", en: "Supplies", sr: "Oprema", col: "#241a2a" }], trees: [160, 310, 495, 645], lamps: [255, 600] },
+    { id: "uptown", en: "Uptown", sr: "Gornji grad", b: [
+        { id: "library", x: 50, w: 120, h: 140, icon: "📚", en: "Library", sr: "Biblioteka", col: "#1c2230" },
+        { id: "hospital", x: 230, w: 120, h: 160, icon: "🏥", en: "Hospital", sr: "Bolnica", col: "#22262e" },
+        { id: "bank", x: 410, w: 130, h: 150, icon: "🏦", en: "Bank", sr: "Banka", col: "#1e2420" },
+        { id: "hotel", x: 600, w: 130, h: 180, icon: "🏨", en: "Hotel", sr: "Hotel", col: "#2a2030" }], trees: [190, 380, 570, 775], lamps: [140, 520] }
 ];
+const CITY_B = DISTRICTS.flatMap(d => d.b);
+let district = 1;
+const PLACES = {
+    docks: { t: ["The docks smell of salt and diesel.", "Dokovi mirišu na so i dizel."], a: [["⚓ Ask the dockworkers (1h)", "⚓ Pitaj lučke radnike (1h)", "rumor"]] },
+    bar: { t: ["The Rusty Anchor is loud, smoky and full of secrets.", "Zarđalo sidro je bučno, zadimljeno i puno tajni."], a: [["🍺 Ask around (1h)", "🍺 Raspitaj se (1h)", "rumor"]] },
+    pawn: { t: ["The pawnbroker eyes you over his glasses.", "Zalagač te gleda preko naočara."], a: [["💰 Sell old junk (+$30, 1h)", "💰 Prodaj staro đubre (+30$, 1h)", "sell"]] },
+    warehouse: { t: ["A black rook is chalked on the door. Locked. Not yet.", "Na vratima je kredom nacrtan crni top. Zaključano. Za sada."], a: [] },
+    library: { t: ["Quiet shelves, old newspapers, one sleepy clerk.", "Tihe police, stare novine, jedan pospani službenik."], a: [["📚 Read the archives (2h)", "📚 Čitaj arhivu (2h)", "read"]] },
+    hospital: { t: ["The smell of disinfectant. A doctor hurries past.", "Miris dezinfekcije. Doktor žurno prolazi."], a: [["🩺 Ask the doctor (1h)", "🩺 Pitaj doktora (1h)", "rumor"]] },
+    bank: { t: ["Marble floors and cold, polite faces.", "Mermerni podovi i hladna, učtiva lica."], a: [["💳 Check your account", "💳 Proveri račun", "account"]] },
+    hotel: { t: ["A quiet lobby. A room for the night costs $40.", "Tih hol. Soba za noć košta 40$."], a: [["🛏 Sleep until morning ($40)", "🛏 Spavaj do jutra (40$)", "rest"]] }
+};
+function rumorText(p) {
+    advance(1);
+    const r = pick(RUMORS), lead = Math.random() < p;
+    if (lead) { profile.nextLead = 1; saveProfile(); }
+    return LL(r[0], r[1]) + (lead ? "\n" + LL("A tip: you will start your next case with a lead.", "Dojava: sledeći slučaj počinješ sa tragom.") : "");
+}
+function placeAct(kind) {
+    if (kind === "rumor") cityText(rumorText(0.25));
+    else if (kind === "sell") { advance(1); profile.cash += 30; saveProfile(); cityText(LL("You sell some old junk. +$30.", "Prodaješ staro đubre. +30$.")); refreshScene(); }
+    else if (kind === "read") {
+        advance(2);
+        const lead = Math.random() < 0.3;
+        if (lead) { profile.nextLead = 1; saveProfile(); }
+        cityText(LL("Old headlines: a black chess piece shows up at three unsolved cases.", "Stari naslovi: crna šahovska figura se pojavljuje u tri nerešena slučaja.") + (lead ? "\n" + LL("You copy a name: you start your next case with a lead.", "Prepisuješ ime: sledeći slučaj počinješ sa tragom.") : ""));
+    } else if (kind === "account") cityText(LL(`Balance: $${profile.cash}. Reputation: ${profile.rep}/100.`, `Stanje: ${profile.cash}$. Ugled: ${profile.rep}/100.`));
+    else if (kind === "rest") {
+        if (profile.cash < 40) { cityText(LL("You can’t afford a room ($40).", "Ne možeš da priuštiš sobu (40$).")); return; }
+        profile.cash -= 40; sleepNow();
+        cityText(LL("You sleep until morning at the hotel.", "Spavaš do jutra u hotelu."));
+    }
+}
+
 const doorX = b => b.x + b.w / 2;
 const RUMORS = [["“They say the Architect never sleeps.”", "„Kažu da Arhitekta nikad ne spava.“"], ["“Someone saw a man with a chess piece near the harbor.”", "„Neko je video čoveka sa šahovskom figurom kraj luke.“"], ["“The mayor’s office is nervous again.”", "„Gradonačelnikova kancelarija je opet nervozna.“"], ["“Marlow was seen arguing with Internal Affairs.”", "„Marlowa su videli kako se svađa sa Unutrašnjom kontrolom.“"]];
 const dateOf = day => new Date(2026, 9, 12 + day - 1);
@@ -1587,17 +1710,21 @@ function dueStr(abs) {
     return `${wdName(d)} ${d.getDate()} ${monName(d)}, ${String(Math.floor(h)).padStart(2, "0")}:${String(Math.round((h % 1) * 60)).padStart(2, "0")}`;
 }
 const evTitle = e => e.type === "urgent" ? LL(`Murder in ${e.city}`, `Ubistvo u gradu ${e.city}`) : LL("Meet Whisper at the park", "Sastanak sa Šapatom u parku");
-const cityHeader = () => `🏙 Harborview · ${profile.detective ? profile.detective.name + " · " : ""}${dateStr()} · ${hh()} · $${profile.cash} · ⭐${profile.rep}`;
+const cityHeader = () => `🏙 ${LL(DISTRICTS[district].en, DISTRICTS[district].sr)} · ${profile.detective ? profile.detective.name + " · " : ""}${dateStr()} · ${hh()} · $${profile.cash} · ⭐${profile.rep}`;
 const openEventFor = id => id === "park" && profile.events.some(e => e.type === "meet" && e.status === "open");
 
 function citySvg() {
+    const hr = profile.hour, day = hr >= 8 && hr < 17, night = !(hr >= 7 && hr < 19), D = DISTRICTS[district];
     let b = "";
-    CITY_B.forEach(o => {
-        const top = 290 - o.h, hs = hash(o.id);
-        const win = [...Array(6)].map((_, k) => `<rect class="w" style="animation-delay:${(k * 0.8).toFixed(1)}s" x="${o.x + 12 + (k % 3) * ((o.w - 38) / 2)}" y="${top + 40 + Math.floor(k / 3) * 30}" width="14" height="16" fill="#e8c36a" opacity="${(hs >> k) & 1 ? 0.65 : 0.12}"/>`).join("");
-        b += `<g class="hot" onclick="cityGo('${o.id}')"><rect x="${o.x}" y="${top}" width="${o.w}" height="${o.h}" fill="${o.col}" stroke="#2d3748" stroke-width="2"/>${win}<rect x="${doorX(o) - 15}" y="260" width="30" height="30" fill="#1a1410"/><text x="${doorX(o)}" y="${top + 24}" text-anchor="middle" font-size="20">${o.icon}</text>${openEventFor(o.id) ? `<text x="${doorX(o)}" y="${top - 8}" text-anchor="middle" font-size="22">❗</text>` : ""}<text x="${doorX(o)}" y="318" text-anchor="middle">${LL(o.en, o.sr)}</text></g>`;
+    D.b.forEach(o => {
+        const top = 400 - o.h, hs = hash(o.id), on = !day;
+        const win = [...Array(6)].map((_, k) => `<rect class="w" style="animation-delay:${(k * 0.8).toFixed(1)}s" x="${o.x + 12 + (k % 3) * ((o.w - 38) / 2)}" y="${top + 40 + Math.floor(k / 3) * 30}" width="14" height="16" fill="#e8c36a" opacity="${on && (hs >> k) & 1 ? 0.7 : 0.14}"/>`).join("");
+        b += `<g class="hot" onclick="cityGo('${o.id}')"><rect class="bld" x="${o.x}" y="${top}" width="${o.w}" height="${o.h}" fill="${o.col}" stroke="#2d3748" stroke-width="2"/>${win}<rect x="${doorX(o) - 15}" y="370" width="30" height="30" fill="#1a1410"/><text x="${doorX(o)}" y="${top + 24}" text-anchor="middle" font-size="20">${o.icon}</text>${openEventFor(o.id) ? `<text x="${doorX(o)}" y="${top - 8}" text-anchor="middle" font-size="22">❗</text>` : ""}<text x="${doorX(o)}" y="422" text-anchor="middle">${LL(o.en, o.sr)}</text></g>`;
     });
-    return `<svg viewBox="0 0 800 340"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#05060a"/><stop offset="1" stop-color="#1c2230"/></linearGradient></defs><rect width="800" height="340" fill="url(#cg)"/><rect y="290" width="800" height="50" fill="#0a0c12"/><rect x="0" y="240" width="800" height="100" fill="transparent" onclick="floorClick(event)"/>${b}${plSvg()}${tint()}</svg>`;
+    const far = [...Array(14)].map((_, i) => `<rect x="${i * 60}" y="${250 + (i * 41) % 60}" width="52" height="200" fill="${day ? "#7c8aa6" : "#0a0e18"}" opacity=".7"/>`).join("");
+    const prev = district > 0 ? `<g class="hot" onclick="cityGo('prev')"><rect x="2" y="340" width="30" height="58" rx="4" fill="#223" stroke="#556" stroke-width="2"/><text x="17" y="377" text-anchor="middle" font-size="22" fill="#e2e8f0">◀</text><text x="4" y="436" text-anchor="start">${LL(DISTRICTS[district - 1].en, DISTRICTS[district - 1].sr)}</text></g>` : "";
+    const next = district < DISTRICTS.length - 1 ? `<g class="hot" onclick="cityGo('next')"><rect x="768" y="340" width="30" height="58" rx="4" fill="#223" stroke="#556" stroke-width="2"/><text x="783" y="377" text-anchor="middle" font-size="22" fill="#e2e8f0">▶</text><text x="796" y="436" text-anchor="end">${LL(DISTRICTS[district + 1].en, DISTRICTS[district + 1].sr)}</text></g>` : "";
+    return `<svg class="${day ? "day" : ""}" viewBox="0 0 800 450">${skyScene(hr, isRain())}${far}<rect y="400" width="800" height="50" fill="${day ? "#5a6070" : "#0a0c12"}"/>${D.trees.map(x => treeSvg(x, 0.55, night)).join("")}${b}${D.lamps.map(x => lampSvg(x, night)).join("")}${prev}${next}<rect x="0" y="350" width="800" height="100" fill="transparent" onclick="floorClick(event)"/>${plSvg()}</svg>`;
 }
 function cityText(t) { el("cityText").innerText = t; }
 function cityActs(list) {
@@ -1610,10 +1737,20 @@ function showCity(keep) {
     if (!keep) plX = lastDoor;
     el("cityTitle").innerText = cityHeader();
     el("cityScene").innerHTML = citySvg();
-    cityText(LL("Click a building to walk there. Time passes as you walk.", "Klikni na zgradu da odeš do nje. Vreme prolazi dok hodaš."));
+    cityText(LL("Click a building to walk there. Arrows at the edges lead to other districts.", "Klikni na zgradu da odeš do nje. Strelice na ivicama vode u druge delove grada."));
     cityActs([]);
     switchScreen("cityScreen");
 }
+function showScene(kind, en, sr) {
+    where = kind; plX = 100;
+    el("streetBtn").classList.remove("hidden");
+    el("hubTitle").innerText = hubHeader();
+    el("hubScene").innerHTML = hubSvg(kind);
+    hubSay(LL(en, sr));
+    switchScreen("hubScreen");
+}
+const showCafe = () => showScene("cafe", "The café smells of coffee and rain. Talk to the barista or the regulars.", "Kafić miriše na kafu i kišu. Razgovaraj sa konobarom ili stalnim gostima.");
+const showPark = () => showScene("park", "The park is quiet. Someone may be waiting here.", "Park je tih. Možda te neko čeka.");
 function showHome() {
     where = "home"; plX = 250;
     el("streetBtn").classList.remove("hidden");
@@ -1623,6 +1760,14 @@ function showHome() {
     switchScreen("hubScreen");
 }
 function cityGo(id) {
+    if (id === "prev" || id === "next") {
+        const dir = id === "next" ? 1 : -1;
+        if (district + dir < 0 || district + dir >= DISTRICTS.length) return;
+        walkTo(dir > 0 ? 770 : 30, () => { advance(0.5); district += dir; plX = dir > 0 ? 40 : 760; showCity(true); });
+        return;
+    }
+    const di = DISTRICTS.findIndex(d => d.b.some(x => x.id === id));
+    if (di >= 0) district = di;
     const b = CITY_B.find(x => x.id === id), cost = Math.max(0.25, Math.round(Math.abs(doorX(b) - plX) / 800 * 4) / 4);
     walkTo(doorX(b), () => { advance(cost); cityEnter(id); });
 }
@@ -1631,38 +1776,26 @@ function cityEnter(id) {
     lastDoor = doorX(b);
     if (id === "home") showHome();
     else if (id === "station") showHub();
+    else if (id === "cafe") showCafe();
+    else if (id === "park") showPark();
     else if (id === "shop") { hubFrom = "city"; showOffice(); }
-    else if (id === "cafe") {
-        cityText(LL("The café smells of burnt coffee and rain.", "Kafić miriše na zagorenu kafu i kišu."));
-        cityActs([
-            [LL("☕ Coffee ($10, 1h)", "☕ Kafa (10$, 1h)"), () => {
-                if (profile.cash < 10) { cityText(LL("You can’t afford coffee ($10).", "Ne možeš da priuštiš kafu (10$).")); return; }
-                profile.cash -= 10; profile.coffee = 1; advance(1);
-                cityText(LL("Strong and bitter. You can stay awake 3 hours longer in your next case.", "Jaka i gorka. U sledećem slučaju možeš da ostaneš budan 3 sata duže."));
-            }],
-            [LL("👂 Listen to rumors (1h)", "👂 Poslušaj glasine (1h)"), () => {
-                advance(1);
-                const r = pick(RUMORS), lead = Math.random() < 0.2;
-                cityText(LL(r[0], r[1]) + (lead ? "\n" + LL("A waiter slips you a note: you start your next case with a lead.", "Konobar ti gura poruku: sledeći slučaj počinješ sa tragom.") : ""));
-                if (lead) profile.nextLead = 1;
-                saveProfile();
-            }]
-        ]);
-    } else if (id === "park") {
-        cityText(LL("The park is quiet and wet.", "Park je tih i mokar."));
-        cityActs([[LL("🧍 Look for Whisper", "🧍 Potraži Šapata"), completeMeet]]);
+    else if (PLACES[id]) {
+        const p = PLACES[id];
+        cityText(LL(p.t[0], p.t[1]));
+        cityActs(p.a.map(([en, sr, kind]) => [LL(en, sr), () => placeAct(kind)]));
     }
 }
 function completeMeet() {
+    const say = t => (where === "city" ? cityText(t) : hubSay(t));
     const e = profile.events.find(x => x.type === "meet" && x.status === "open");
-    if (!e) { cityText(LL("Nobody here but pigeons and a man feeding them.", "Ovde nema nikoga osim golubova i čoveka koji ih hrani.")); return; }
+    if (!e) { say(LL("Nobody here but pigeons and a man feeding them.", "Ovde nema nikoga osim golubova i čoveka koji ih hrani.")); return; }
     e.status = "done"; profile.cash += 120; profile.nextLead = 1; profile.rep = Math.min(100, profile.rep + 1);
     saveProfile(); refreshScene();
-    cityText(LL("Whisper slips you an envelope: “Start your next case with a lead, Detective.” (+$120)", "Šapat ti gura kovertu: „Sledeći slučaj počni sa tragom, detektive.“ (+120$)"));
+    say(LL("Whisper slips you an envelope: “Start your next case with a lead, Detective.” (+$120)", "Šapat ti gura kovertu: „Sledeći slučaj počni sa tragom, detektive.“ (+120$)"));
 }
 
 function refreshScene() {
-    if (where === "station" || where === "home") { el("hubTitle").innerText = hubHeader(); el("hubScene").innerHTML = hubSvg(where); }
+    if (["station", "home", "cafe", "park"].includes(where)) { el("hubTitle").innerText = hubHeader(); el("hubScene").innerHTML = hubSvg(where); }
     else if (where === "city") { el("cityTitle").innerText = cityHeader(); el("cityScene").innerHTML = citySvg(); }
 }
 function sleepNow() { advance(profile.hour < 7 ? 7 - profile.hour : 31 - profile.hour); }
@@ -1715,6 +1848,10 @@ function takeUrgentId(id) {
     const e = profile.events.find(x => x.id === id);
     if (e && e.status === "open") { el("calBox").classList.add("hidden"); takeUrgent(e); }
 }
+const _rau = refreshAudioUI;
+refreshAudioUI = function () { _rau(); ["musicBtn", "sfxBtn", "voiceBtn"].forEach(k => { el(k + "2").dataset.en = el(k).dataset.en; }); applyLang(); };
+function openSettings() { refreshAudioUI(); el("setBox").classList.remove("hidden"); }
+function closeSettings() { el("setBox").classList.add("hidden"); }
 function closeCalendar() { el("calBox").classList.add("hidden"); }
 function openCalendar() {
     const today = profile.day, d0 = dateOf(today), back = (d0.getDay() + 6) % 7;
