@@ -218,8 +218,8 @@ function portrait(p, met) {
 
 // ================= PROFILE, RANKS, TUTORIAL =================
 const RANKS = [["Rookie", 0], ["Officer", 2], ["Detective", 4], ["Senior Detective", 7], ["Inspector", 11], ["Chief", 16]];
-let profile = { solved: 0, tutorialDone: false, cash: 0, items: {}, theme: "", chapter: 0, choices: {}, nextTails: 0, nextLead: 0, storyIntro: false, day: 1, coffee: 0, detective: null, hour: 1, events: [], evId: 0, rep: 50 };
-const awakeLimit = () => 16 + (profile.items.thermos ? 4 : 0) + ((typeof state !== "undefined" && state.coffee) || 0);
+let profile = { solved: 0, tutorialDone: false, cash: 0, items: {}, theme: "", chapter: 0, choices: {}, nextTails: 0, nextLead: 0, storyIntro: false, day: 1, coffee: 0, detective: null, hour: 1, events: [], evId: 0, rep: 50, skills: { fitness: 0, forensics: 0, charm: 0 } };
+const awakeLimit = () => 16 + (profile.items.thermos ? 4 : 0) + ((typeof state !== "undefined" && state.coffee) || 0) + ((profile.skills && profile.skills.fitness) || 0);
 try { Object.assign(profile, JSON.parse(localStorage.getItem("caseClosedProfile") || "{}")); } catch (e) {}
 const saveProfile = () => { try { localStorage.setItem("caseClosedProfile", JSON.stringify(profile)); } catch (e) {} };
 const rankIndex = () => RANKS.reduce((r, x, i) => profile.solved >= x[1] ? i : r, 0);
@@ -578,6 +578,7 @@ function searchScene() {
     addClue("habit", state.kt.habit, "Crime scene", false);
     addNote(`Scene evidence: the killer ${HABITS[state.kt.habit].file}.`);
     el("reportBox").innerText = `You find traces at the scene: whoever did this ${HABITS[state.kt.habit].file}.`;
+    if (Math.random() < 0.25 * skill("forensics")) toolReveal("🔍 Your forensic training spots more. ", "Training");
     sfx("lead");
     tip("search");
 }
@@ -704,7 +705,7 @@ function askMore(p, key) {
         if (res === "match") sfx("lead");
     } else if (key === "press") {
         const liar = p.truthful === false && p.alibiLoc !== null;
-        if (liar && Math.random() < 0.65) {
+        if (liar && Math.random() < 0.65 + 0.1 * skill("charm")) {
             kn.verdict = "bad";
             text = p.id === state.killer.id ? `*sweats* "All right... I wasn't there the whole time."` : `*looks away* "Okay, I wasn't there. I was meeting someone I shouldn't. It has nothing to do with the murder."`;
             addNote(`${p.name} cracked under pressure: the alibi was a lie.`);
@@ -767,6 +768,7 @@ function collectPrints() {
     sfx("lead");
 }
 
+const skill = k => (profile.skills && profile.skills[k]) || 0;
 function checkAlibis() {
     const idx = state.currentLocation, name = state.locations[idx].name, key = "alibi" + idx;
     if (state.done[key]) { el("reportBox").innerText = "You already verified the alibis here. Check your NOTEBOOK (Notes or Compare)."; return; }
@@ -816,7 +818,7 @@ function talkTo(p) {
         addNote(`${p.name} claims: ${state.known[p.id].claim}`);
         if (p.motive) text += ` "${p.motive}"`;
         const unknown = state.people.filter(q => q.id !== p.id && !state.known[q.id]);
-        if (unknown.length && Math.random() < 0.4) {
+        if (unknown.length && Math.random() < 0.4 + 0.1 * skill("charm")) {
             const q = pick(unknown);
             text += ` "Ask ${q.name}, the ${q.job.toLowerCase()}. Usually at ${state.locations[q.loc].name}."`;
             discover(q, "usually found at");
@@ -1171,7 +1173,7 @@ const DYN = { sr: {
  "*hands over their prints reluctantly*": "*nerado daje otiske*", "*gives their prints calmly* ": "*mirno daje otiske* ", "Take them, I have nothing to hide.": "Uzmite ih, nemam šta da krijem.", "🧤 Take fingerprints": "🧤 Uzmi otiske",
  "🔦 Flashlight": "🔦 Lampa", "Search dark corners (once per place, 1h).": "Pretraži mračne uglove (jednom po mestu, 1h).", "🔬 UV lamp": "🔬 UV lampa", "Reveals hidden traces (once per place, 1h).": "Otkriva skrivene tragove (jednom po mestu, 1h).",
  "🧤 Fingerprint kit": "🧤 Komplet za otiske", "Collect prints at the scene, then test people (1h each).": "Uzmi otiske sa mesta zločina, pa testiraj ljude (po 1h).",
- " Urgent case bonus: +$": " Bonus za hitan slučaj: +$", "Gallery owner": "Vlasnica galerije", "Police officer": "Policajac", "Bartender": "Konobar", "CEO": "Direktor", "Lawyer": "Advokat", "Mechanic": "Mehaničar", "Student": "Student", "Pharmacist": "Farmaceut", "Accountant": "Računovođa", "Bouncer": "Izbacivač", "Journalist": "Novinar", "Chef": "Kuvar", "Landlord": "Stanodavac",
+ " Urgent case bonus: +$": " Bonus za hitan slučaj: +$", "Gallery owner": "Vlasnica galerije", "🔍 Your forensic training spots more. ": "🔍 Tvoja forenzička obuka primećuje još. ", "Training": "Obuka", "Police officer": "Policajac", "Bartender": "Konobar", "CEO": "Direktor", "Lawyer": "Advokat", "Mechanic": "Mehaničar", "Student": "Student", "Pharmacist": "Farmaceut", "Accountant": "Računovođa", "Bouncer": "Izbacivač", "Journalist": "Novinar", "Chef": "Kuvar", "Landlord": "Stanodavac",
  "Nurse": "Medicinar", "Tattoo artist": "Tatu majstor", "Professor": "Profesor", "Florist": "Cvećar", "Musician": "Muzičar", "Realtor": "Agent za nekretnine", "Dealer": "Diler", "Taxi dispatcher": "Taksi dispečer",
  "Street vendor": "Ulični prodavac", "Night janitor": "Noćni domar", "Taxi driver": "Taksista", "Barista": "Barista", "Dock worker": "Lučki radnik", "Newsstand clerk": "Prodavac na kiosku", "Paramedic": "Bolničar", "Security guard": "Čuvar", "Hot dog vendor": "Prodavac viršli", "Bus driver": "Vozač autobusa", "Night nurse": "Noćna sestra"
 } };
@@ -1338,7 +1340,7 @@ let hubFrom = false, aptCalled = false;
 const LL = (en, sr) => (lang === "sr" ? sr : en);
 const PLY = 415;
 let plX = 300, walkId = 0;
-const STAND = { call: 380, adoor: 70, door: 700, board: 150, computer: 380, phone: 522, coffee: 600, bed: 150, marlow: 440, vance: 225, hphone: 380, hdoor: 70, hbed: 235, exit: 70, barista: 560, pat1: 140, pat2: 310, whisper: 465, walker: 615, bench: 380 };
+const STAND = { call: 380, adoor: 70, door: 700, board: 150, computer: 380, phone: 522, coffee: 600, bed: 150, marlow: 440, vance: 225, pnpc: 560, pp1: 265, pp2: 375, hphone: 380, hdoor: 70, hbed: 235, exit: 70, barista: 560, pat1: 140, pat2: 310, whisper: 465, walker: 615, bench: 380 };
 const raf = f => (typeof requestAnimationFrame === "function" ? requestAnimationFrame(f) : setTimeout(() => f(Date.now()), 16));
 const figInner = (coat, hat, skin = "#c9a98a", style = "fedora", sx = 1, sy = 1) => `<g class="fig"><g class="body"><g transform="scale(1.35,${(1.35 * sy).toFixed(2)})"><ellipse cx="0" cy="2" rx="${16 * sx}" ry="4" fill="#000" opacity=".4"/><rect class="lg" x="${-9 * sx}" y="-22" width="${7 * sx}" height="22" fill="#14171f"/><rect class="lg2" x="${2 * sx}" y="-22" width="${7 * sx}" height="22" fill="#14171f"/><rect x="${-12 * sx}" y="-64" width="${24 * sx}" height="46" rx="6" fill="${coat}"/><circle cx="0" cy="-74" r="10" fill="${skin}"/><circle cx="-3.6" cy="-75" r="2" fill="#fff"/><circle cx="3.6" cy="-75" r="2" fill="#fff"/><circle cx="-3.6" cy="-75" r="1" fill="#111"/><circle cx="3.6" cy="-75" r="1" fill="#111"/><path d="M-3 -69Q0 -66.5 3 -69" stroke="#5a2a2a" stroke-width="1.1" fill="none"/>${style === "fedora" ? `<rect x="-15" y="-82" width="30" height="5" fill="${hat}"/><rect x="-9" y="-93" width="18" height="12" rx="3" fill="${hat}"/>` : style === "cap" ? `<rect x="-10" y="-87" width="20" height="9" rx="4" fill="${hat}"/><rect x="2" y="-80" width="15" height="3" fill="${hat}"/>` : `<path d="M-10 -78Q0 -92 10 -78Z" fill="#2a1a10"/>`}</g></g></g>`;
 const plSvg = () => { const d = profile.detective || {}; return `<g id="pl" transform="translate(${plX},${PLY})">${figInner(d.coat || "#3a3f4b", d.hatc || "#1a1d26", d.skin || "#c9a98a", d.hat || "fedora", d.build || 1, d.tall || 1)}</g>`; };
@@ -1392,6 +1394,7 @@ function skyScene(h, rain) {
 }
 const treeSvg = (x, sc, night) => { const g = night ? ["#16301b", "#1b3a22", "#12281a"] : ["#2f6b3a", "#357a42", "#2a5e34"]; return `<g transform="translate(${x},400) scale(${sc})"><rect x="-6" y="-70" width="12" height="70" fill="#4a3320"/><circle cx="0" cy="-90" r="34" fill="${g[0]}"/><circle cx="-22" cy="-70" r="24" fill="${g[1]}"/><circle cx="22" cy="-72" r="24" fill="${g[2]}"/></g>`; };
 const lampSvg = (x, on) => `<g transform="translate(${x},400)"><rect x="-3" y="-120" width="6" height="120" fill="#1a1d26"/><circle cx="0" cy="-124" r="9" fill="#ffd98a" opacity="${on ? 1 : 0.35}"/>${on ? `<circle cx="0" cy="-124" r="28" fill="#ffd98a" opacity=".18"/>` : ""}</g>`;
+let curPlace = null;
 function hubSvg(kind) {
     const hot = (id, inner, lx, ly, label) => `<g class="hot" onclick="hubGo('${id}')">${inner}<text x="${lx}" y="${ly}" text-anchor="middle">${label}</text></g>`;
     const hr = profile.hour, day = hr >= 8 && hr < 17, night = !(hr >= 7 && hr < 19), rain = isRain();
@@ -1412,6 +1415,13 @@ ${[100, 270].map(x => `<rect x="${x}" y="245" width="90" height="10" fill="#7a5a
 <rect x="430" y="235" width="350" height="55" fill="#5a3a22" stroke="#7a5a3a" stroke-width="2"/><rect x="430" y="230" width="350" height="8" fill="#8a6a4a"/><rect x="700" y="200" width="46" height="32" fill="#2a2f3a" stroke="#555"/>
 <text x="250" y="60" text-anchor="middle" fill="#e8c36a" font-size="18">☕ CAFÉ</text>${exitDoor}</g>`,
             npcSvg("barista", 600, "#6a4a2a", "#2a1a10", "Barista") + npcSvg("pat1", 175, "#2a4a5a", "#1a1a2a", LL("Regular", "Stalni gost")) + npcSvg("pat2", 345, "#5a2a4a", "#2a1a1a", LL("Regular", "Stalni gost")));
+    }
+    if (kind === "place") {
+        const T = PLACE_THEME[curPlace] || PLACE_THEME.bank, P = PLACES[curPlace], acts = P.a;
+        const props = acts.slice(1).map((a, i) => hot("pp" + (i + 1), `<rect x="${260 + i * 110}" y="200" width="80" height="55" rx="6" fill="#3a4a66" stroke="#6a7aa0" stroke-width="2"/><text x="${300 + i * 110}" y="236" text-anchor="middle" class="ic">${a[0].split(" ")[0]}</text>`, 300 + i * 110, 190, LL(a[0].replace(/ \(.*\)/, ""), a[1].replace(/ \(.*\)/, "")))).join("");
+        const leave = T.out ? hot("exit", `<rect x="14" y="210" width="64" height="80" rx="4" fill="#223" stroke="#556" stroke-width="3"/><text x="46" y="262" text-anchor="middle" font-size="28" fill="#e2e8f0">◀</text>`, 46, 200, LL("STREET", "ULICA")) : exitDoor;
+        const back = T.out ? `${skyScene(hr, rain)}<rect y="400" width="800" height="50" fill="${day ? "#3c7a46" : "#10231a"}"/>${floor}` : room(T.w[0], T.w[1]);
+        return svg(`${back}<g transform="translate(0,110)">${deco(T.deco)}${leave}${props}</g>${T.out ? "" : tint()}`, npcSvg("pnpc", 600, T.npc[0], T.npc[1], LL(T.npc[2], T.npc[3])));
     }
     const home = kind === "home";
     if (kind === "apt" || home) {
@@ -1463,7 +1473,7 @@ function finishCreator() {
 const hh = () => String(Math.floor(profile.hour)).padStart(2, "0") + ":" + String(Math.round((profile.hour % 1) * 60)).padStart(2, "0");
 const PLACE_NAME = { station: ["🏢", "Police station", "Policijska stanica"], home: ["🏠", "Your apartment", "Tvoj stan"], apt: ["🏠", "Your apartment", "Tvoj stan"], cafe: ["☕", "Café", "Kafić"], park: ["🌳", "Park", "Park"] };
 function hubHeader() {
-    const d = profile.detective, n = PLACE_NAME[where] || PLACE_NAME.station;
+    const d = profile.detective, pb = where === "place" ? CITY_B.find(x => x.id === curPlace) : null, n = pb ? [pb.icon, pb.en, pb.sr] : PLACE_NAME[where] || PLACE_NAME.station;
     return `${n[0]} ${LL(n[1], n[2])} · ${d ? d.name + " · " : ""}${dateStr()} · ${hh()} · $${profile.cash} · ⭐${profile.rep}`;
 }
 function tint() {
@@ -1524,6 +1534,9 @@ function hubAct(k) {
             : pick([LL("Check every alibi twice. The murder happened at midnight.", "Proveri svaki alibi dvaput. Ubistvo se desilo u ponoć."), LL("A tool is only as good as the detective holding it. Visit the computer.", "Alat vredi onoliko koliko i detektiv koji ga drži. Svrati do računara."), LL("Sleep when you must, rookie. Tired detectives make wrong arrests.", "Spavaj kad moraš, početniče. Umorni detektivi pogrešno hapse."), LL("That black rook... somebody wants us to look at it.", "Taj crni top... neko želi da ga gledamo.")])) + "”");
     } else if (k === "vance") {
         hubSay("Vance: “" + pick([LL("Still alive, rookie? The Architect isn’t a patient man.", "Još si živ, početniče? Arhitekta nije strpljiv čovek."), LL("I read your reports. Not bad. Don’t let it go to your head.", "Čitao sam tvoje izveštaje. Nije loše. Nemoj da ti ode u glavu."), LL("Internal Affairs is watching everyone. Even Marlow.", "Unutrašnja kontrola prati sve. Čak i Marlowa.")]) + "”");
+    } else if (k === "pnpc" || k === "pp1" || k === "pp2") {
+        const a = (PLACES[curPlace] || { a: [] }).a, i = k === "pnpc" ? 0 : Number(k.slice(2));
+        if (a[i]) placeAct(a[i][2]);
     } else if (k === "exit") {
         showCity();
     } else if (k === "barista") {
@@ -1657,23 +1670,57 @@ const DISTRICTS = [
         { id: "cafe", x: 180, w: 110, h: 130, icon: "☕", en: "Café", sr: "Kafić", col: "#2a1f1a" },
         { id: "station", x: 330, w: 140, h: 190, icon: "🏢", en: "Police station", sr: "Policijska stanica", col: "#18202e" },
         { id: "park", x: 520, w: 110, h: 100, icon: "🌳", en: "Park", sr: "Park", col: "#12261a" },
-        { id: "shop", x: 660, w: 110, h: 140, icon: "🛒", en: "Supplies", sr: "Oprema", col: "#241a2a" }], trees: [160, 310, 495, 645], lamps: [255, 600] },
+        { id: "shop", x: 660, w: 110, h: 140, icon: "🛒", en: "Supplies", sr: "Oprema", col: "#241a2a" }], trees: [160, 310, 645], lamps: [255, 600], sign: 495 },
     { id: "uptown", gx: 1, gy: 0, en: "Uptown", sr: "Gornji grad", b: [
         { id: "library", x: 50, w: 120, h: 140, icon: "📚", en: "Library", sr: "Biblioteka", col: "#1c2230" },
         { id: "hospital", x: 230, w: 120, h: 160, icon: "🏥", en: "Hospital", sr: "Bolnica", col: "#22262e" },
         { id: "bank", x: 410, w: 130, h: 150, icon: "🏦", en: "Bank", sr: "Banka", col: "#1e2420" },
-        { id: "hotel", x: 600, w: 130, h: 180, icon: "🏨", en: "Hotel", sr: "Hotel", col: "#2a2030" }], trees: [190, 380, 570, 775], lamps: [140, 520] },
+        { id: "hotel", x: 600, w: 130, h: 180, icon: "🏨", en: "Hotel", sr: "Hotel", col: "#2a2030" }], trees: [380, 570, 775], lamps: [140, 520], sign: 200 },
     { id: "eastside", gx: 2, gy: 1, en: "Eastside", sr: "Istočna strana", b: [
         { id: "church", x: 50, w: 120, h: 150, icon: "⛪", en: "Church", sr: "Crkva", col: "#22202a" },
         { id: "club", x: 230, w: 120, h: 120, icon: "🎷", en: "Jazz club", sr: "Džez klub", col: "#2a1c28" },
         { id: "gym", x: 410, w: 130, h: 110, icon: "🏋", en: "Gym", sr: "Teretana", col: "#1e2a2a" },
-        { id: "cemetery", x: 600, w: 130, h: 80, icon: "🪦", en: "Cemetery", sr: "Groblje", col: "#1a2020" }], trees: [150, 330, 560, 780], lamps: [200, 560] },
+        { id: "cemetery", x: 600, w: 130, h: 100, icon: "🪦", en: "Cemetery", sr: "Groblje", col: "#1a2020" }], trees: [150, 330, 560, 780], lamps: [200, 560] },
     { id: "oldtown", gx: 1, gy: 2, en: "Old Town", sr: "Stari grad", b: [
         { id: "diner", x: 40, w: 120, h: 110, icon: "🍔", en: "Diner", sr: "Restoran", col: "#2a2218" },
         { id: "market", x: 220, w: 130, h: 100, icon: "🧺", en: "Market", sr: "Pijaca", col: "#2a2a1c" },
         { id: "museum", x: 410, w: 140, h: 170, icon: "🏛", en: "Museum", sr: "Muzej", col: "#20242e" },
-        { id: "locksmith", x: 610, w: 120, h: 120, icon: "🗝", en: "Locksmith", sr: "Bravar", col: "#241e1e" }], trees: [190, 380, 585, 775], lamps: [160, 560] }
+        { id: "locksmith", x: 610, w: 120, h: 120, icon: "🗝", en: "Locksmith", sr: "Bravar", col: "#241e1e" }], trees: [380, 585, 775], lamps: [160, 560], sign: 190 }
 ];
+const PLACE_THEME = {
+    docks: { w: ["#1a2a34", "#223c4a"], deco: "crates", npc: ["#3a4a5a", "#222", "Dockworker", "Lučki radnik"] },
+    bar: { w: ["#2a1c1c", "#3a2a24"], deco: "counter", npc: ["#5a3a2a", "#222", "Bartender", "Konobar"] },
+    pawn: { w: ["#262018", "#3a3224"], deco: "shelves", npc: ["#4a4a3a", "#222", "Pawnbroker", "Zalagač"] },
+    library: { w: ["#1c2230", "#2a3248"], deco: "books", npc: ["#3a3a5a", "#222", "Librarian", "Bibliotekar"] },
+    hospital: { w: ["#2a3038", "#3a4450"], deco: "ward", npc: ["#d8dde8", "#aab", "Doctor", "Doktor"] },
+    bank: { w: ["#1e2420", "#2a342e"], deco: "counter", npc: ["#2a2a3a", "#111", "Clerk", "Službenik"] },
+    hotel: { w: ["#2a2030", "#3a2e44"], deco: "counter", npc: ["#4a2a3a", "#111", "Receptionist", "Recepcioner"] },
+    church: { w: ["#22202a", "#34304a"], deco: "pews", npc: ["#222", "#111", "Priest", "Sveštenik"] },
+    club: { w: ["#2a1c28", "#3a2438"], deco: "stage", npc: ["#5a2a4a", "#222", "Bandleader", "Vođa benda"] },
+    gym: { w: ["#1e2a2a", "#2a3c3c"], deco: "gym", npc: ["#2a5a4a", "#222", "Trainer", "Trener"] },
+    cemetery: { out: true, deco: "graves", npc: ["#2a2a2a", "#111", "Gravedigger", "Grobar"] },
+    diner: { w: ["#2a2218", "#3a3022"], deco: "tables", npc: ["#6a5a3a", "#eee", "Cook", "Kuvar"] },
+    market: { w: ["#2a2a1c", "#3a3a28"], deco: "stalls", npc: ["#5a4a2a", "#222", "Vendor", "Prodavac"] },
+    museum: { w: ["#20242e", "#2e3444"], deco: "frames", npc: ["#3a4a4a", "#222", "Guard", "Čuvar"] },
+    locksmith: { w: ["#241e1e", "#342a2a"], deco: "shelves", npc: ["#4a3a2a", "#222", "Locksmith", "Bravar"] }
+};
+function deco(k) {
+    const r = (x, y, w, h, f, ex = "") => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${f}" ${ex}/>`;
+    const col = ["#7a2a2a", "#2a5a3a", "#6a5a2a", "#2a3a6a"];
+    if (k === "counter") return r(430, 235, 350, 55, "#5a3a22", 'stroke="#7a5a3a" stroke-width="2"') + r(430, 230, 350, 8, "#8a6a4a") + r(450, 130, 320, 6, "#6b4a2f") + [...Array(8)].map((_, i) => r(470 + i * 38, 92 + (i % 2) * 4, 12, 38, col[i % 4], 'rx="3"')).join("");
+    if (k === "shelves") return [60, 120, 180].map(y => r(40, y, 320, 6, "#6b4a2f") + [...Array(8)].map((_, i) => r(54 + i * 38, y - 26, 26, 26, col[(i + y) % 4])).join("")).join("") + r(430, 235, 350, 55, "#4a3a2a", 'stroke="#6a5a3a" stroke-width="2"');
+    if (k === "books") return [0, 1, 2].map(j => r(40 + j * 250, 40, 220, 210, "#2a1f18", 'stroke="#4a3a2a" stroke-width="3"') + [...Array(18)].map((_, i) => r(50 + j * 250 + (i % 9) * 22, 52 + Math.floor(i / 9) * 100, 16, 80, col[(i + j) % 4])).join("")).join("");
+    if (k === "ward") return [80, 330].map(x => r(x, 220, 200, 70, "#cfd6e0", 'stroke="#8a93a2" stroke-width="2"') + r(x, 200, 56, 30, "#e8edf5", 'rx="6"')).join("") + r(560, 60, 180, 150, "#10192b", 'stroke="#8a93a2" stroke-width="4"');
+    if (k === "pews") return [0, 1, 2].map(i => r(60, 170 + i * 36, 260, 16, "#5a3a22") + r(430, 170 + i * 36, 260, 16, "#5a3a22")).join("") + `<path d="M320 20Q400 -20 480 20V150H320Z" fill="#3a4a7a" opacity=".8"/>` + r(370, 150, 60, 80, "#6b4a2f");
+    if (k === "stage") return r(470, 235, 310, 55, "#4a2a3a", 'stroke="#8a4a6a" stroke-width="2"') + r(610, 120, 4, 115, "#999") + `<circle cx="612" cy="116" r="8" fill="#ccc"/>` + [100, 250].map(x => `<ellipse cx="${x}" cy="250" rx="46" ry="12" fill="#6b4a2f"/>` + r(x - 4, 250, 8, 40, "#4a3320")).join("");
+    if (k === "gym") return r(60, 230, 170, 16, "#333") + r(60, 150, 8, 90, "#555") + r(60, 150, 70, 8, "#555") + `<circle cx="330" cy="260" r="26" fill="#222" stroke="#666" stroke-width="4"/><circle cx="440" cy="260" r="26" fill="#222" stroke="#666" stroke-width="4"/>` + r(330, 256, 110, 8, "#888") + r(560, 200, 190, 24, "#3a2a2a") + r(580, 224, 12, 66, "#555") + r(720, 224, 12, 66, "#555");
+    if (k === "crates") return [[60, 230], [140, 230], [100, 190], [300, 230], [380, 230], [340, 190], [620, 230]].map(([x, y]) => r(x, y, 70, 60, "#6b4a2f", 'stroke="#3a2a1a" stroke-width="3"')).join("");
+    if (k === "tables") return [80, 230].map(x => r(x, 230, 110, 10, "#7a5a3a") + r(x + 50, 240, 10, 50, "#4a3320") + r(x - 12, 255, 30, 12, "#a03a3a") + r(x + 100, 255, 30, 12, "#a03a3a")).join("") + r(430, 235, 350, 55, "#5a4a2a", 'stroke="#7a6a3a" stroke-width="2"');
+    if (k === "stalls") return [60, 230, 400].map((x, i) => [0, 1, 2, 3, 4].map(j => r(x + j * 28, 170, 28, 30, j % 2 ? "#a03a3a" : "#e0d8c0")).join("") + r(x, 200, 140, 60, "#6b4a2f", 'stroke="#3a2a1a" stroke-width="2"') + [0, 1, 2].map(j => `<circle cx="${x + 30 + j * 40}" cy="196" r="9" fill="${["#c0392b", "#27ae60", "#f1c40f"][(i + j) % 3]}"/>`).join("")).join("");
+    if (k === "frames") return [60, 190, 320, 450, 580].map((x, i) => r(x, 70 + (i % 2) * 20, 90, 70, "#4a3a1a", 'stroke="#c9a227" stroke-width="3"') + r(x + 8, 78 + (i % 2) * 20, 74, 54, col[i % 4])).join("") + r(300, 240, 200, 50, "#2a2f3a", 'stroke="#555"');
+    if (k === "graves") return [90, 200, 310, 420, 530, 640].map((x, i) => `<path d="M${x} 290V${230 - (i % 3) * 10}h-14v0h28" stroke="#9aa0a8" stroke-width="12" fill="none"/>` + r(x - 16, 250, 32, 40, "#7a808a", 'rx="10"')).join("") + `<path d="M720 290V130M720 170l-40-34M720 150l36-30" stroke="#05060a" stroke-width="8"/>`;
+    return "";
+}
 const DIRS = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] };
 function neighbor(dir) { const [dx, dy] = DIRS[dir], g = DISTRICTS[district]; return DISTRICTS.findIndex(d => d.gx === g.gx + dx && d.gy === g.gy + dy); }
 const CITY_B = DISTRICTS.flatMap(d => d.b);
@@ -1696,6 +1743,15 @@ const PLACES = {
     locksmith: { t: ["Keys of every shape hang on the walls.", "Ključevi svih oblika vise na zidovima."], a: [["🗝 Ask the locksmith (1h)", "🗝 Pitaj bravara (1h)", "rumor"]] },
     hotel: { t: ["A quiet lobby. A room for the night costs $40.", "Tih hol. Soba za noć košta 40$."], a: [["🛏 Sleep until morning ($40)", "🛏 Spavaj do jutra (40$)", "rest"]] }
 };
+PLACES.library.a.push(["📚 Study forensics ($10, 3h)", "📚 Uči forenziku (10$, 3h)", "study"]);
+PLACES.club.a.push(["🗣 Practice charm ($20, 2h)", "🗣 Vežbaj šarm (20$, 2h)", "practice"], ["🃏 Play poker ($20, 2h)", "🃏 Igraj poker (20$, 2h)", "poker"]);
+PLACES.bar.a.push(["🕵 Hire a street informant ($60)", "🕵 Angažuj uličnog doušnika (60$)", "hire"]);
+function trainSkill(key, cost, hours, name) {
+    if (profile.skills[key] >= 3) { cityText(LL(`${name} is already maxed (3/3).`, `${name} je već na maksimumu (3/3).`)); return; }
+    if (profile.cash < cost) { cityText(LL(`You can’t afford it ($${cost}).`, `Ne možeš to da priuštiš (${cost}$).`)); return; }
+    profile.cash -= cost; profile.skills[key]++; advance(hours);
+    cityText(LL(`${name}: level ${profile.skills[key]}/3.`, `${name}: nivo ${profile.skills[key]}/3.`));
+}
 function rumorText(p) {
     advance(1);
     const r = pick(RUMORS), lead = Math.random() < p;
@@ -1710,12 +1766,23 @@ function placeAct(kind) {
         const lead = Math.random() < 0.3;
         if (lead) { profile.nextLead = 1; saveProfile(); }
         cityText(LL("Old headlines: a black chess piece shows up at three unsolved cases.", "Stari naslovi: crna šahovska figura se pojavljuje u tri nerešena slučaja.") + (lead ? "\n" + LL("You copy a name: you start your next case with a lead.", "Prepisuješ ime: sledeći slučaj počinješ sa tragom.") : ""));
-    } else if (kind === "account") cityText(LL(`Balance: $${profile.cash}. Reputation: ${profile.rep}/100.`, `Stanje: ${profile.cash}$. Ugled: ${profile.rep}/100.`));
+    } else if (kind === "account") cityText(LL(`Balance: $${profile.cash}. Reputation: ${profile.rep}/100. Skills: fitness ${skill("fitness")}, forensics ${skill("forensics")}, charm ${skill("charm")} (max 3).`, `Stanje: ${profile.cash}$. Ugled: ${profile.rep}/100. Veštine: kondicija ${skill("fitness")}, forenzika ${skill("forensics")}, šarm ${skill("charm")} (maks 3).`));
     else if (kind === "pray") { advance(1); profile.rep = Math.min(100, profile.rep + 1); saveProfile(); cityText(LL("You light a candle. A quiet hour. (+1 reputation)", "Pališ sveću. Miran sat. (+1 ugled)")); refreshScene(); }
-    else if (kind === "train") {
-        if (profile.cash < 15) { cityText(LL("You can’t afford the gym ($15).", "Ne možeš da priuštiš teretanu (15$).")); return; }
-        profile.cash -= 15; profile.coffee = 1; advance(2);
-        cityText(LL("A hard workout. You can stay awake 3 hours longer in your next case.", "Težak trening. U sledećem slučaju možeš da ostaneš budan 3 sata duže."));
+    else if (kind === "train") trainSkill("fitness", 15, 2, LL("Fitness", "Kondicija"));
+    else if (kind === "study") trainSkill("forensics", 10, 3, LL("Forensics", "Forenzika"));
+    else if (kind === "practice") trainSkill("charm", 20, 2, LL("Charm", "Šarm"));
+    else if (kind === "hire") {
+        if (profile.cash < 60) { cityText(LL("You can’t afford an informant ($60).", "Ne možeš da priuštiš doušnika (60$).")); return; }
+        profile.cash -= 60; profile.nextLead = 1; saveProfile();
+        cityText(LL("A street kid takes your money and nods: you start your next case with a lead.", "Ulični klinac uzima novac i klima glavom: sledeći slučaj počinješ sa tragom."));
+        refreshScene();
+    } else if (kind === "poker") {
+        if (profile.cash < 20) { cityText(LL("You can’t afford the buy-in ($20).", "Ne možeš da priuštiš ulog (20$).")); return; }
+        advance(2);
+        const win = Math.random() < 0.45;
+        profile.cash += win ? 40 : -20; saveProfile();
+        cityText(win ? LL("You bluff well and win. +$40.", "Dobro blefiraš i pobeđuješ. +40$.") : LL("Bad cards. You lose $20.", "Loše karte. Gubiš 20$."));
+        refreshScene();
     }
     else if (kind === "rest") {
         if (profile.cash < 40) { cityText(LL("You can’t afford a room ($40).", "Ne možeš da priuštiš sobu (40$).")); return; }
@@ -1743,21 +1810,33 @@ function citySvg() {
     const hr = profile.hour, day = hr >= 8 && hr < 17, night = !(hr >= 7 && hr < 19), D = DISTRICTS[district];
     let b = "";
     D.b.forEach(o => {
-        const top = 400 - o.h, hs = hash(o.id), on = !day;
-        const win = [...Array(6)].map((_, k) => `<rect class="w" style="animation-delay:${(k * 0.8).toFixed(1)}s" x="${o.x + 12 + (k % 3) * ((o.w - 38) / 2)}" y="${top + 40 + Math.floor(k / 3) * 30}" width="14" height="16" fill="#e8c36a" opacity="${on && (hs >> k) & 1 ? 0.7 : 0.14}"/>`).join("");
-        b += `<g class="hot" onclick="cityGo('${o.id}')"><rect class="bld" x="${o.x}" y="${top}" width="${o.w}" height="${o.h}" fill="${o.col}" stroke="#2d3748" stroke-width="2"/>${win}<rect x="${doorX(o) - 15}" y="370" width="30" height="30" fill="#1a1410"/><text x="${doorX(o)}" y="${top + 24}" text-anchor="middle" font-size="20">${o.icon}</text>${openEventFor(o.id) ? `<text x="${doorX(o)}" y="${top - 8}" text-anchor="middle" font-size="22">❗</text>` : ""}<text x="${doorX(o)}" y="422" text-anchor="middle">${LL(o.en, o.sr)}</text></g>`;
+        const top = 400 - o.h, hs = hash(o.id), on = !day, rows = o.h >= 130 ? 2 : 1;
+        const words = LL(o.en, o.sr).split(" "), mid = Math.ceil(words.length / 2);
+        const win = [...Array(rows * 3)].map((_, k) => `<rect class="w" style="animation-delay:${(k * 0.8).toFixed(1)}s" x="${o.x + 12 + (k % 3) * ((o.w - 38) / 2)}" y="${top + 66 + Math.floor(k / 3) * 26}" width="14" height="16" fill="#e8c36a" opacity="${on && (hs >> k) & 1 ? 0.7 : 0.14}"/>`).join("");
+        b += `<g class="hot" onclick="cityGo('${o.id}')"><rect class="bld" x="${o.x}" y="${top}" width="${o.w}" height="${o.h}" fill="${o.col}" stroke="#2d3748" stroke-width="2"/>${win}<rect x="${doorX(o) - 15}" y="370" width="30" height="30" fill="#1a1410"/><text class="ic" x="${doorX(o)}" y="${top + 22}" text-anchor="middle">${o.icon}</text>${openEventFor(o.id) ? `<text class="ic" x="${doorX(o)}" y="${top - 8}" text-anchor="middle">❗</text>` : ""}<text class="bn" x="${doorX(o)}" y="${top + 40}" text-anchor="middle">${words.slice(0, mid).join(" ")}</text><text class="bn" x="${doorX(o)}" y="${top + 52}" text-anchor="middle">${words.slice(mid).join(" ")}</text></g>`;
     });
     const far = [...Array(14)].map((_, i) => `<rect x="${i * 60}" y="${250 + (i * 41) % 60}" width="52" height="200" fill="${day ? "#7c8aa6" : "#0a0e18"}" opacity=".7"/>`).join("");
-    const arrow = (dir, x, glyph) => { const n = neighbor(dir); return n < 0 ? "" : `<g class="hot" onclick="cityGo('${dir}')"><rect x="${x}" y="338" width="30" height="58" rx="4" fill="#223" stroke="#556" stroke-width="2"/><text x="${x + 15}" y="375" text-anchor="middle" fill="#e2e8f0">${glyph}</text><rect x="${dir === "left" ? 2 : 700}" y="316" width="98" height="19" rx="3" fill="#000b"/><text x="${dir === "left" ? 51 : 749}" y="330" text-anchor="middle" fill="#00f0ff">${LL(DISTRICTS[n].en, DISTRICTS[n].sr)}</text></g>`; };
-    const prev = arrow("left", 2, "◀");
-    const next = arrow("right", 768, "▶");
-    return `<svg class="${day ? "day" : ""}" viewBox="0 0 800 450">${skyScene(hr, isRain())}${far}<rect y="400" width="800" height="50" fill="${day ? "#5a6070" : "#0a0c12"}"/>${D.trees.map(x => treeSvg(x, 0.55, night)).join("")}${b}${D.lamps.map(x => lampSvg(x, night)).join("")}${prev}${next}<rect x="0" y="350" width="800" height="100" fill="transparent" onclick="floorClick(event)"/>${plSvg()}</svg>`;
+    const ground = `<rect y="400" width="800" height="18" fill="${day ? "#8a90a0" : "#1a1d26"}"/><rect y="418" width="800" height="32" fill="${day ? "#3f4452" : "#0c0e14"}"/><path d="M0 434H800" stroke="#e8c36a" stroke-width="2" stroke-dasharray="26 18" opacity=".55"/>`;
+    const edge = (dir, x, glyph) => { const n = neighbor(dir); return n < 0 ? "" : `<g class="hot" onclick="cityGo('${dir}')"><rect x="${x}" y="420" width="112" height="26" rx="4" fill="#12203a" stroke="#00f0ff" stroke-width="2"/><text class="rs" x="${x + 56}" y="438" text-anchor="middle">${glyph} ${LL(DISTRICTS[n].en, DISTRICTS[n].sr)}</text></g>`; };
+    const up = neighbor("up"), down = neighbor("down");
+    const board = (dir, y, n, glyph) => n < 0 ? "" : `<g class="hot" onclick="cityGo('${dir}')"><rect x="${D.sign - 62}" y="${y}" width="124" height="24" rx="4" fill="#12203a" stroke="#00f0ff" stroke-width="2"/><text class="rs" x="${D.sign}" y="${y + 17}" text-anchor="middle">${glyph} ${LL((DISTRICTS[n] || {}).en, (DISTRICTS[n] || {}).sr)}</text></g>`;
+    const post = D.sign && (up >= 0 || down >= 0) ? `<rect x="${D.sign - 3}" y="300" width="6" height="100" fill="#1a1d26"/>${board("up", 304, up, "▲")}${board("down", 332, down, "▼")}` : "";
+    return `<svg class="${day ? "day" : ""}" viewBox="0 0 800 450">${skyScene(hr, isRain())}${far}${ground}${D.trees.map(x => treeSvg(x, 0.55, night)).join("")}${b}${D.lamps.map(x => lampSvg(x, night)).join("")}${post}${edge("left", 6, "◀")}${edge("right", 682, "▶")}<rect x="0" y="350" width="800" height="50" fill="transparent" onclick="floorClick(event)"/>${plSvg()}</svg>`;
 }
-function cityText(t) { el("cityText").innerText = t; }
+function cityText(t) { if (where === "city") el("cityText").innerText = t; else hubSay(t); }
 function cityActs(list) {
     const box = el("cityActs");
     box.innerHTML = "";
     list.forEach(([label, fn]) => { const b = document.createElement("button"); b.className = "button"; b.innerText = label; b.onclick = fn; box.appendChild(b); });
+}
+function showPlace(id) {
+    curPlace = id; where = "place"; plX = 100;
+    el("streetBtn").classList.remove("hidden");
+    el("hubTitle").innerText = hubHeader();
+    el("hubScene").innerHTML = hubSvg("place");
+    const p = PLACES[id];
+    hubSay(LL(p.t[0], p.t[1]) + "\n" + LL("Click the person or the objects to do something here.", "Klikni na osobu ili predmete da nešto uradiš ovde."));
+    switchScreen("hubScreen");
 }
 function showCity(keep) {
     where = "city";
@@ -1766,16 +1845,6 @@ function showCity(keep) {
     el("cityScene").innerHTML = citySvg();
     cityText(LL("Click a building to walk there. Use the arrows to go to other streets.", "Klikni na zgradu da odeš do nje. Strelice vode u druge ulice."));
     cityActs([]);
-    const nav = el("cityNav");
-    nav.innerHTML = "";
-    [["left", "⬅"], ["right", "➡"], ["up", "⬆"], ["down", "⬇"]].forEach(([dir, ar]) => {
-        const n = neighbor(dir);
-        if (n < 0) return;
-        const b = document.createElement("button");
-        b.className = "button"; b.innerText = `${ar} ${LL(DISTRICTS[n].en, DISTRICTS[n].sr)}`;
-        b.onclick = () => cityGo(dir);
-        nav.appendChild(b);
-    });
     switchScreen("cityScreen");
 }
 function showScene(kind, en, sr) {
@@ -1819,8 +1888,8 @@ function cityEnter(id) {
     else if (id === "shop") { hubFrom = "city"; showOffice(); }
     else if (PLACES[id]) {
         const p = PLACES[id];
-        cityText(LL(p.t[0], p.t[1]));
-        cityActs(p.a.map(([en, sr, kind]) => [LL(en, sr), () => placeAct(kind)]));
+        if (p.a.length) showPlace(id);
+        else cityText(LL(p.t[0], p.t[1]));
     }
 }
 function completeMeet() {
@@ -1833,7 +1902,7 @@ function completeMeet() {
 }
 
 function refreshScene() {
-    if (["station", "home", "cafe", "park"].includes(where)) { el("hubTitle").innerText = hubHeader(); el("hubScene").innerHTML = hubSvg(where); }
+    if (["station", "home", "cafe", "park", "place"].includes(where)) { el("hubTitle").innerText = hubHeader(); el("hubScene").innerHTML = hubSvg(where); }
     else if (where === "city") { el("cityTitle").innerText = cityHeader(); el("cityScene").innerHTML = citySvg(); }
 }
 function sleepNow() { advance(profile.hour < 7 ? 7 - profile.hour : 31 - profile.hour); }

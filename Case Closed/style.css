@@ -278,3 +278,20 @@ body[data-theme="blood"] { --bg-color: #120506; --panel-color: #1f0b0d; --accent
 .bname { fill: #2a1a10; font-size: 11px; font-weight: bold; font-family: 'Courier New', monospace; }
 .bjob { fill: #3a2a1a; font-size: 10px; font-family: 'Courier New', monospace; }
 .bhead { fill: #5a3a10; font-size: 11px; font-weight: bold; font-family: 'Courier New', monospace; }
+
+/* ===== v13: immersive story screens, settings overlay ===== */
+#hubScreen.wide-wrap, #cityScreen.wide-wrap { position: fixed; inset: 0; max-width: none; width: auto; padding: 0; border: 0; border-radius: 0; background: #05060a; z-index: 5; }
+#hubScene, #cityScene { position: absolute; inset: 0; height: 100% !important; border: 0; border-radius: 0; margin: 0; }
+#hubTitle, #cityTitle { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 7; background: #000b; padding: 6px 14px; border-radius: 6px; margin: 0; font-size: 16px; white-space: nowrap; max-width: 96vw; overflow: hidden; text-overflow: ellipsis; }
+.hudb { position: absolute; left: 0; right: 0; bottom: 0; z-index: 7; background: linear-gradient(#0000, #000d 35%); padding: 28px 16px 10px; text-align: center; }
+.hudb p { margin: 0 0 8px; white-space: pre-line; text-shadow: 0 0 6px #000; }
+#setBox { position: fixed; inset: 0; z-index: 90; background: #000b; display: flex; align-items: center; justify-content: center; }
+.day .bld { filter: brightness(2.3) saturate(1.2); }
+
+/* ===== v16: compact HUD, street labels ===== */
+.hot text.ic { font-size: 22px; }
+.hot text.bn { font-size: 11px; fill: #f2f5fa; font-weight: bold; }
+.hot text.rs { font-size: 13px; fill: #00f0ff; font-weight: bold; }
+.hudb { padding: 16px 12px 8px; }
+.hudb p { font-size: 14px; margin: 0 0 6px; }
+.hudb .button { padding: 6px 12px; margin: 2px; font-size: 13px; }
